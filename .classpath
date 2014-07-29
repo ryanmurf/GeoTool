@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="swingx-all-1.6.5-1.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/GeoTool/swingx-all-1.6.5-1-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="swingx-ws-r317.jar" sourcepath="swingx-ws-r317-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/GeoTool/swingx-ws-1.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="jfreechart-1.0.17.jar"/>
+	<classpathentry kind="lib" path="sqlite-jdbc-3.7.15.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/GeoTool/sqlite-jdbc-3.7.15-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/JsoilWat"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SoilWatExplorer"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
