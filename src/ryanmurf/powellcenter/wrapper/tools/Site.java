@@ -1,5 +1,6 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -88,9 +89,9 @@ public class Site extends Rectangle {
 
 	public void setMapPos(JXMapViewer map) {
 		Point2D ptUL = map.getTileFactory().geoToPixel(pos[0], map.getZoom());
-		Point2D ptBR = map.getTileFactory().geoToPixel(pos[1], map.getZoom());
+		Point2D ptBR = map.getTileFactory().geoToPixel(pos[3], map.getZoom());
 		int sizeX = (int) (ptBR.getX() - ptUL.getX());
-		int sizeY = (int) (ptUL.getY() - ptBR.getY());
+		int sizeY = (int) (ptBR.getY() - ptUL.getY());
 		this.setLocation((int) ptUL.getX(), (int) ptUL.getY());
 		this.setSize(sizeX, sizeY);
 	}
@@ -98,7 +99,9 @@ public class Site extends Rectangle {
 	public void draw(Graphics2D g, LinearGradientPaint2 paint, int valueIndex) {
 		if(draw) {
 			float respValue = respValues.get(valueIndex).floatValue();
-			g.setColor(paint.getColorAt(paint.getFraction(respValue)));
+			Color o = paint.getColorAt(paint.getFraction(respValue));
+			Color c = new Color(o.getRed(), o.getGreen(), o.getBlue(), 210);
+			g.setColor(c);
 			g.fill(this);
 			if(border)
 				g.setColor(Color.black);
@@ -121,7 +124,7 @@ public class Site extends Rectangle {
 		
 		ClosestPair.Pair p = ClosestPair.divideAndConquer(siteList);
 		double min = p.distance;
-		min = Math.max(min, .3125);
+		min = Math.max(min, .1125);
 		
 		GeoPosition TL = new GeoPosition(g.getNorthWest().getLongitude() - min/2, g.getNorthWest().getLatitude() + min/2);
 		GeoPosition BR = new GeoPosition(g.getSouthEast().getLongitude() + min/2, g.getSouthEast().getLatitude() - min/2);

@@ -59,7 +59,7 @@ public class GeoDataExplorer {
 		
 		map = new Map();
 		
-		Database data = new Database("/home/ryan/Documents/Work/Projects/Product19_SagebrushRemoval/20140723_SagebrushRemoval898_PuntaDelEste/4_Data_SWOutputAggregated/dbTables_current.sqlite3");
+		Database data = new Database("/home/ryan/Documents/Work/Product19_SagebrushRemoval/20140723_SagebrushRemoval898_PuntaDelEste/4_Data_SWOutputAggregated/dbTables_final.sqlite3");
 		//new Thread(new GetData(map, b));
 		map.sites.addAll(data.getResponseValues("aggregation_overall_mean", "1", "Veg_fClimate", "Current", "SWinput_Composition_Grasses_fraction_const"));
 		map.setMaxMin();
