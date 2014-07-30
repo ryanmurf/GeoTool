@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -117,6 +118,66 @@ public class Database {
 		}
 		return false;
 	}
+	
+	public double getSiteMaxLatitude() {
+		double v = 0;
+		try {
+			Statement statement = dbTables.createStatement();
+			statement.setQueryTimeout(45);
+			ResultSet rs = statement.executeQuery("SELECT MAX(Y_WGS84) FROM MAINDB.sites;");
+			while (rs.next()) {
+				v = rs.getDouble(1);
+			}
+		} catch (SQLException e) {
+
+		}
+		return v;
+	}
+	
+	public double getSiteMinLatitude() {
+		double v = 0;
+		try {
+			Statement statement = dbTables.createStatement();
+			statement.setQueryTimeout(45);
+			ResultSet rs = statement.executeQuery("SELECT MIN(Y_WGS84) FROM MAINDB.sites;");
+			while (rs.next()) {
+				v = rs.getDouble(1);
+			}
+		} catch (SQLException e) {
+
+		}
+		return v;
+	}
+	
+	public double getSiteMaxLongitude() {
+		double v = 0;
+		try {
+			Statement statement = dbTables.createStatement();
+			statement.setQueryTimeout(45);
+			ResultSet rs = statement.executeQuery("SELECT MAX(X_WGS84) FROM MAINDB.sites;");
+			while (rs.next()) {
+				v = rs.getDouble(1);
+			}
+		} catch (SQLException e) {
+
+		}
+		return v;
+	}
+	
+	public double getSiteMinLongitude() {
+		double v = 0;
+		try {
+			Statement statement = dbTables.createStatement();
+			statement.setQueryTimeout(45);
+			ResultSet rs = statement.executeQuery("SELECT MIN(X_WGS84) FROM MAINDB.sites;");
+			while (rs.next()) {
+				v = rs.getDouble(1);
+			}
+		} catch (SQLException e) {
+
+		}
+		return v;
+	}
 
 	List<Integer> getRegions() {
 		List<Integer> regions = new ArrayList<Integer>();
@@ -196,9 +257,10 @@ public class Database {
 			while (rs.next()) {
 				String table = rs.getString("name");
 				if (!isHeaderTable(table)) {
-					if (table.toLowerCase().contains("mean")) {
-						tables.add(table.replace("_mean", ""));
-					}
+					//if (table.toLowerCase().contains("mean")) {
+					//	tables.add(table.toLowerCase().replace("_mean", ""));
+					//}
+					tables.add(table);
 				}
 			}
 		} catch (SQLException e) {
@@ -226,13 +288,14 @@ public class Database {
 
 	List<String> getReducedNames(String table) {
 		List<String> names = getTableColumnNames(table);
-		for (String name : names) {
-			name.replaceAll("_m\\d++_", "_m*_");
-			name.replaceAll("_L\\d++_", "_L*_");
-			name.replaceAll("doy\\d++", "doy*");
+		for(int i=0; i<names.size(); i++) {
+			names.set(i, names.get(i).replaceAll("_m\\d++_", "_m*_"));
+			names.set(i, names.get(i).replaceAll("_L\\d++_", "_L*_"));
+			names.set(i, names.get(i).replaceAll("doy\\d++", "doy*"));
 		}
 		List<String> reducedNames = new ArrayList<String>(new HashSet<String>(
 				names));
+		Collections.sort(reducedNames);
 		return reducedNames;
 	}
 
@@ -270,7 +333,11 @@ public class Database {
 	}
 
 	List<Site> getResponseValues(String table, String region,
-			String experimental, String scenario, String response) {
+			String experimental, String scenario, String response, String whereClause) {
+		
+		if(region == null)
+			region = "";
+		
 		boolean current = true;
 		if (scenario.compareTo("Current") != 0) {
 			current = false;
@@ -342,6 +409,8 @@ public class Database {
 			headerColumn += "MAINDB.header.Y_WGS84 AS Y_WGS84";
 		
 		String sql = "SELECT "+headerColumn+", "+response+" FROM "+dbtable+" INNER JOIN MAINDB.header ON "+dbtable+".P_id=MAINDB.header.P_id WHERE MAINDB.header.Experimental_Label='"+experimental+"' AND MAINDB.header.Scenario='"+scenario+"'";
+		if(whereClause.length() != 0)
+			sql += " AND "+whereClause;
 		if(region.compareTo("All") != 0 && contains(headerColumns,"Region")) {
 			sql += " AND MAINDB.header.Region="+region;
 		}
@@ -354,7 +423,7 @@ public class Database {
 			statement.setQueryTimeout(240);
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
-				Site s = new Site(new GeoPosition(rs.getDouble("Y_WGS84"), rs.getDouble("X_WGS84")), 30);
+				Site s = new Site(new GeoPosition(rs.getDouble("Y_WGS84"), rs.getDouble("X_WGS84")), .2125);
 				if(contains(headerColumns,"P_id"))
 					s.P_id = rs.getInt("P_id");
 				if(contains(headerColumns,"site_id"))
@@ -373,7 +442,7 @@ public class Database {
 		} catch (SQLException e) {
 			System.out.println("Could not get response\n"+sql);
 		}
-		return Site.getMask(sites, true);
-		//return sites;
+		//return Site.getMask(sites, true);
+		return sites;
 	}
 }

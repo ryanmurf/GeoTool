@@ -1,6 +1,6 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
-import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -90,9 +90,9 @@ public class Site extends Rectangle {
 	public void setMapPos(JXMapViewer map) {
 		Point2D ptUL = map.getTileFactory().geoToPixel(pos[0], map.getZoom());
 		Point2D ptBR = map.getTileFactory().geoToPixel(pos[3], map.getZoom());
-		int sizeX = (int) (ptBR.getX() - ptUL.getX());
-		int sizeY = (int) (ptBR.getY() - ptUL.getY());
-		this.setLocation((int) ptUL.getX(), (int) ptUL.getY());
+		int sizeX = (int) Math.round(ptBR.getX() - ptUL.getX());
+		int sizeY = (int) Math.round(ptBR.getY() - ptUL.getY());
+		this.setLocation((int) Math.round(ptUL.getX()), (int) Math.round(ptUL.getY()));
 		this.setSize(sizeX, sizeY);
 	}
 
@@ -101,11 +101,18 @@ public class Site extends Rectangle {
 			float respValue = respValues.get(valueIndex).floatValue();
 			Color o = paint.getColorAt(paint.getFraction(respValue));
 			Color c = new Color(o.getRed(), o.getGreen(), o.getBlue(), 210);
+			
 			g.setColor(c);
 			g.fill(this);
-			if(border)
+			if(border) {
 				g.setColor(Color.black);
-			g.draw(this);
+				g.draw(this);
+			} else {
+				g.setStroke(new BasicStroke(1f));
+				c = new Color(o.getRed(), o.getGreen(), o.getBlue(), 255);
+				g.setColor(c);
+				g.draw(this);
+			}
 		} else {
 			if(border) {
 				g.setColor(Color.black);
@@ -148,12 +155,7 @@ public class Site extends Rectangle {
 			}
 		}
 		
-		//for(Site s : siteList) {
-			//s.setSize(min);
-			//if(s.P_id == p.point1.P_id) {
-			//	p.point1.setSize(.1);
-			//}
-		//}
+		
 		return raster;
 	}
 }

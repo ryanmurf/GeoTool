@@ -1,14 +1,23 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
+import java.awt.Canvas;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.Image;
 import java.awt.Rectangle;
-import java.awt.event.MouseEvent;
+import java.awt.Shape;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import java.awt.image.ImageObserver;
+import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
 
 import org.jdesktop.swingx.JXMapKit;
 import org.jdesktop.swingx.JXMapViewer;
@@ -23,12 +32,20 @@ public class Map extends JXMapKit {
 	private static final long serialVersionUID = 1L;
 	
 	final List<Site> sites = new ArrayList<Site>();
-	final LinearGradientPaint2 paint;
+	//final LinearGradientPaint2 paint;
 	final Integer valueIndex = new Integer(0);
+	
+	private final List<Layer> layers = new ArrayList<Layer>();
+	private CompoundPainter<Painter<JXMapViewer>> cp;
+	private List<Painter<JXMapViewer>> painters = new ArrayList<Painter<JXMapViewer>>();
 
+	private Canvas canvas;
+	
+	private JComboBox<Color> 
+	
 	public Map() {
 		super();
-		paint = new LinearGradientPaint2(0, 0, 50, 50, new float[] {0, 1.0f/3.0f, 2.0f/3.0f}, new Color[] {Color.red, Color.blue, Color.green});
+		//paint = new LinearGradientPaint2(0, 0, 50, 50, new float[] {0, 1.0f/3.0f, 2.0f/3.0f}, new Color[] {Color.red, Color.blue, Color.green});
 		
 		//this.setDefaultProvider(DefaultProviders.OpenStreetMaps);
 		//TileFactoryInfo info = new TileFactoryInfo(0,17,17,
@@ -63,111 +80,75 @@ public class Map extends JXMapKit {
 		setZoomSliderVisible(true);
 		setZoom(14);
 		
-		setGridPainter();
-		setListeners();
-	}
-	
-	public void setMaxMin() {
-		List<Float> values = new ArrayList<Float>();
-		for(Site s : sites) {
-			values.add(s.respValues.get(valueIndex).floatValue());
-		}
-		paint.max = Collections.max(values).floatValue();
-		paint.min = Collections.min(values).floatValue();
-	}
-	
-	
-	public void setGridPainter() {
-		Painter<JXMapViewer> polygonOverlay = new Painter<JXMapViewer>() {
+		cp = new CompoundPainter<Painter<JXMapViewer>>();
+		cp.setCacheable(false);
+		
+		Painter<JXMapViewer> layerNameOverlay = new Painter<JXMapViewer>() {
+			
 			@Override
 			public void paint(Graphics2D g, JXMapViewer map, int w, int h) {
-				g = (Graphics2D) g.create();
-		        //convert from viewport to world bitmap
-		        Rectangle rect = map.getViewportBounds();
-		        g.translate(-rect.x, -rect.y);
-		        
-				for (Site s : sites) {
-					s.setMapPos(map);
-					s.draw(g, paint, valueIndex.intValue());
-					
+				// TODO Auto-generated method stub
+				for(Layer l : layers) {
+					if(l.selected) {
+						g.setPaint(new Color(0, 0, 0, 150));
+						int width = g.getFontMetrics().stringWidth(l.layerName);
+						g.fillRoundRect(10, 10, width+40, 30, 10, 10);
+						g.setPaint(Color.WHITE);
+						g.drawString(l.layerName, 10 + 10, 10 + 20);
+					}
 				}
-				
-				g.dispose();
 			}
 		};
 		
-		CompoundPainter<Painter<JXMapViewer>> cp = new CompoundPainter<Painter<JXMapViewer>>();
-		cp.setPainters(polygonOverlay);
-		cp.setCacheable(false);
+		JPanel scale = new JPanel();
+		GridBagConstraints gbc_canvas = new GridBagConstraints();
+		gbc_canvas.anchor = GridBagConstraints.EAST;
+		gbc_canvas.gridx = 1;
+		gbc_canvas.gridy = 0;
 		
+		JPanel left = new JPanel();
+		left.setLayout(null);
+		left.setSize(50, 150);
+		
+		this.canvas = new Canvas();
+		canvas.setSize(15, 150);
+		scale.add(canvas);
+		
+		this.getMainMap().add(scale, gbc_canvas);
+		
+		addLayerPainter(layerNameOverlay);
+	}
+	
+	public void addLayer(Layer layer) {
+		this.getMainMap().addMouseListener(layer.getMouseListeners(this));
+		this.getMainMap().addMouseMotionListener(layer.getMouseMotionListener(this));
+		this.addLayerPainter(layer.LayerOverlay);
+		this.layers.add(layer);
+		this.layers.get(layers.size() - 1).setSelected();
+		updateCanvasScale();
+	}
+	
+	private void addLayerPainter(Painter<JXMapViewer> painter) {
+		this.painters.add(painter);
+		Painter<JXMapViewer>[] paints = painters.toArray(new Painter[painters.size()]);
+		this.cp.setPainters(paints);
 		getMainMap().setOverlayPainter(cp);
 	}
 	
-	public void setListeners() {
-		getMainMap().addMouseListener(new MouseListener() {
-			
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
+	private void removeLayerPainter(Painter<JXMapViewer> painter) {
+		this.painters.remove(painter);
+		Painter<JXMapViewer>[] paints = painters.toArray(new Painter[painters.size()]);
+		this.cp.setPainters(paints);
+		getMainMap().setOverlayPainter(cp);
+	}
+	private void updateCanvasScale() {
+		Graphics g = canvas.getGraphics();
+		Graphics2D g2 = (Graphics2D) g;
+		for(Layer l : layers) {
+			if(l.selected) {
+				g2.setPaint(l.paint);
+				g2.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 			}
-			
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				Rectangle r = getMainMap().getViewportBounds();
-				int x = e.getX()+r.x;
-				int y = e.getY()+r.y;
-				if((e.getButton() == 1)) {
-					for(Site s : sites) {
-						if(s.contains(x,y)) {
-							s.border = true;
-							getMainMap().paintImmediately(getMainMap().getBounds());
-						}
-					}
-					//System.out.println("clicked");
-				}
-			}
-		});
-		getMainMap().addMouseMotionListener(new MouseMotionListener() {
-			
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				// TODO Auto-generated method stub
-				Rectangle r = getMainMap().getViewportBounds();
-				int x = e.getX()+r.x;
-				int y = e.getY()+r.y;
-				for(Site s : sites) {
-					if(s.contains(x,y)) {
-						s.border = true;
-						getMainMap().paintImmediately(getMainMap().getBounds());
-					}
-				}
-			}
-			
-			@Override
-			public void mouseDragged(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-		});
-		
+		}
 	}
 }
