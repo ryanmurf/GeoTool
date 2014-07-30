@@ -3,12 +3,29 @@ package ryanmurf.powellcenter.wrapper.tools;
 import java.awt.Paint;
 
 public class LinearGradientPaint2 implements Paint {
-	private final java.awt.LinearGradientPaint GRADIENT;
+	private java.awt.LinearGradientPaint GRADIENT;
 	private float[] fractions;
 	private java.awt.Color[] colors;
 	
 	public float max = 1;
 	public float min = 0;
+	
+	public void setLinearGradient(float startX, float startY, float endX,
+			float endY, float[] fractions, java.awt.Color[] colors) {
+		GRADIENT = new java.awt.LinearGradientPaint(
+				new java.awt.geom.Point2D.Float(startX, startY),
+				new java.awt.geom.Point2D.Float(endX, endY), fractions, colors,
+				java.awt.MultipleGradientPaint.CycleMethod.NO_CYCLE);
+		copyArrays(fractions, colors);
+	}
+	
+	public float[] getFractions() {
+		return fractions;
+	}
+	
+	public java.awt.Color[] getColors() {
+		return colors;
+	}
 
 	public LinearGradientPaint2(float startX, float startY, float endX,
 			float endY, float[] fractions, java.awt.Color[] colors) {
@@ -82,7 +99,7 @@ public class LinearGradientPaint2 implements Paint {
 	}
 	
 	public float getFraction(float value) {
-		float f = value/(max-min);
+		float f = 1 - (value/(max-min));
 		if(Float.compare(f, 1.0f) > 0) {
 			return 1.0f;
 		} else if(Float.compare(f, 0.0f) < 0) {

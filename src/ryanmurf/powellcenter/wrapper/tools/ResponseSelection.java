@@ -26,7 +26,6 @@ import javax.swing.JFormattedTextField;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JTextField;
-import java.awt.BorderLayout;
 
 public class ResponseSelection extends JFrame implements ActionListener, ItemListener {
 	private static final long serialVersionUID = 1L;
@@ -80,6 +79,10 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 	
 	private Database data;
 	private Map map;
+	private JPanel LayerPanel;
+	private JLabel lblSoilLayer;
+	private JComboBox<String> comboBoxLayers;
+	private JCheckBox chckbxBoundingUse;
 	
 	private class GetData implements Runnable {
 
@@ -101,7 +104,6 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 	
 	public void setData() {
 		List<String> headerColumns = data.getTableColumnNames("header");
-		
 		List<String> tables = data.getTables();
 		String[] sTables = tables.toArray(new String[tables.size()]);
 		comboBox_Table.setEnabled(true);
@@ -133,6 +135,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		} else {
 			RegionPanel.setVisible(false);
 		}
+		setLayersPanel();
 		{
 			formattedTextField_LatMax.setValue(data.getSiteMaxLatitude());
 			formattedTextField_LatMin.setValue(data.getSiteMinLatitude());
@@ -141,6 +144,15 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		}
 		{
 			setResponseNames();
+		}
+	}
+	
+	public void setLayersPanel() {
+		if(data.getIsTableLayers((String) comboBox_Table.getSelectedItem())) {
+			LayerPanel.setVisible(true);
+			comboBoxLayers.setModel(new DefaultComboBoxModel<String>(data.getSoilLayers((String) comboBox_Table.getSelectedItem())));
+		} else {
+			LayerPanel.setVisible(false);
 		}
 	}
 	
@@ -215,6 +227,17 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 			this.comboBox_Region.setFont(new Font("Dialog", Font.PLAIN, 12));
 			this.RegionPanel.add(this.comboBox_Region);
 		}
+		
+		this.LayerPanel = new JPanel();
+		FlowLayout flowLayout_3 = (FlowLayout) this.LayerPanel.getLayout();
+		flowLayout_3.setAlignment(FlowLayout.LEFT);
+		ResponsePanel.add(this.LayerPanel);
+		
+		this.lblSoilLayer = new JLabel("Soil Layer:");
+		this.LayerPanel.add(this.lblSoilLayer);
+		
+		this.comboBoxLayers = new JComboBox<String>();
+		this.LayerPanel.add(this.comboBoxLayers);
 		
 		this.BoundingMainPanel = new JPanel();
 		FlowLayout fl_BoundingMainPanel = (FlowLayout) this.BoundingMainPanel.getLayout();
@@ -294,6 +317,9 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 						.addGap(5)
 						.addComponent(this.BoundingLongPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 			);
+			
+			this.chckbxBoundingUse = new JCheckBox("Use");
+			this.BoundingLabelPanel.add(this.chckbxBoundingUse);
 			this.BoundingPanel.setLayout(gl_BoundingPanel);
 		}
 		
@@ -397,9 +423,24 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 			String scenario = (String) comboBox_Scenario.getSelectedItem();
 			String response = (String) comboBox_Response.getSelectedItem();
 			String whereClause = "";
+			if(LayerPanel.isVisible()) {
+				whereClause += "Soil_Layer = "+(String) comboBoxLayers.getSelectedItem();
+			}
+			if(chckbxBoundingUse.isSelected()) {
+				if(whereClause.length() != 0)
+					whereClause += " AND ";
+				else {
+					String LongMin = String.valueOf(((Number) formattedTextField_LongMin.getValue()).doubleValue());
+					String LongMax = String.valueOf(((Number) formattedTextField_LongMax.getValue()).doubleValue());
+					
+					String LatMin = String.valueOf(((Number) formattedTextField_LatMin.getValue()).doubleValue());
+					String LatMax = String.valueOf(((Number) formattedTextField_LatMax.getValue()).doubleValue());
+					whereClause += "X_WGS84 BETWEEN "+LongMin+" AND "+LongMax+" AND Y_WGS84 BETWEEN "+LatMin+" AND "+LatMax;
+				}
+			}
 			
 			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause);
-			Layer l = new Layer(textField_LayerName.getText(), sites, null);
+			Layer l = new Layer(textField_LayerName.getText(), sites, null, map.getSelectedColors());
 			map.addLayer(l);
 		}
 	}
@@ -409,6 +450,8 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		if(src == comboBox_Table) {
 			if(e.getStateChange() == ItemEvent.SELECTED) {
 				setResponseNames();
+				setLayersPanel();
+				this.pack();
 			}
 		}
 	}

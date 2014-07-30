@@ -14,10 +14,12 @@ import javax.swing.JSeparator;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.JLabel;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import java.awt.Canvas;
+import javax.swing.JCheckBoxMenuItem;
+
+import org.jdesktop.swingx.mapviewer.DefaultTileFactory;
+import org.jdesktop.swingx.mapviewer.GeoPosition;
+import org.jdesktop.swingx.mapviewer.TileFactory;
+import org.jdesktop.swingx.mapviewer.TileFactoryInfo;
 
 public class GeoDataExplorer implements ActionListener, MenuListener {
 
@@ -35,6 +37,25 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	private String dbFilePath;
 	private Database data;
 	private ResponseSelection rs;
+	private JMenu mnView;
+	private JCheckBoxMenuItem chckbxmntmColors;
+	private JCheckBoxMenuItem chckbxmntmColorValues;
+	private JSeparator separator_2;
+	private JMenu mnMapProvider;
+	private JMenu mnGoogle;
+	private JMenuItem mntmGhybrid;
+	private JMenuItem mntmGSatellite;
+	private JMenuItem mntmGstreet1;
+	private JMenuItem mntmGstreet2;
+	private JMenuItem mntmGTerrain;
+	private JMenuItem mntmOpenStreetMap;
+	private JMenuItem mntmMapQuest;
+	private JMenu mnNokia;
+	private JMenuItem mntmNormal;
+	private JMenuItem mntmNormalGrey;
+	private JMenuItem mntmNormalTransit;
+	private JMenuItem mntmSatellite;
+	private JMenuItem mntmTerrain;
 	
 	/**
 	 * Launch the application.
@@ -101,23 +122,93 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		this.mntmExit = new JMenuItem("Exit");
 		this.mnFile.add(this.mntmExit);
 		
+		this.mnView = new JMenu("View");
+		this.menuBar.add(this.mnView);
+		
+		this.chckbxmntmColors = new JCheckBoxMenuItem("Show Colors");
+		this.chckbxmntmColors.setSelected(true);
+		this.chckbxmntmColors.addActionListener(this);
+		this.mnView.add(this.chckbxmntmColors);
+		
+		this.chckbxmntmColorValues = new JCheckBoxMenuItem("Show Color Values");
+		this.chckbxmntmColorValues.setSelected(true);
+		this.chckbxmntmColorValues.addActionListener(this);
+		this.mnView.add(this.chckbxmntmColorValues);
+		
+		this.separator_2 = new JSeparator();
+		this.mnView.add(this.separator_2);
+		
+		this.mnMapProvider = new JMenu("Map Provider");
+		this.mnView.add(this.mnMapProvider);
+		
+		this.mnGoogle = new JMenu("Google");
+		this.mnMapProvider.add(this.mnGoogle);
+		
+		this.mntmGhybrid = new JMenuItem("Hybrid");
+		this.mntmGhybrid.addActionListener(this);
+		this.mnGoogle.add(this.mntmGhybrid);
+		
+		this.mntmGSatellite = new JMenuItem("Satellite");
+		this.mntmGSatellite.addActionListener(this);
+		this.mnGoogle.add(this.mntmGSatellite);
+		
+		this.mntmGstreet1 = new JMenuItem("Street 1");
+		this.mntmGstreet1.addActionListener(this);
+		this.mnGoogle.add(this.mntmGstreet1);
+		
+		this.mntmGstreet2 = new JMenuItem("Street 2");
+		this.mntmGstreet2.addActionListener(this);
+		this.mnGoogle.add(this.mntmGstreet2);
+		
+		this.mntmGTerrain = new JMenuItem("Terrain");
+		this.mntmGTerrain.addActionListener(this);
+		this.mnGoogle.add(this.mntmGTerrain);
+		
+		this.mntmOpenStreetMap = new JMenuItem("Open Street Map");
+		this.mntmOpenStreetMap.addActionListener(this);
+		this.mnMapProvider.add(this.mntmOpenStreetMap);
+		
+		this.mntmMapQuest = new JMenuItem("Map Quest");
+		this.mntmMapQuest.addActionListener(this);
+		this.mnMapProvider.add(this.mntmMapQuest);
+		
+		this.mnNokia = new JMenu("Nokia OVI Maps");
+		this.mnMapProvider.add(this.mnNokia);
+		
+		this.mntmNormal = new JMenuItem("Normal");
+		this.mntmNormal.addActionListener(this);
+		this.mnNokia.add(this.mntmNormal);
+		
+		this.mntmNormalGrey = new JMenuItem("Normal (Grey)");
+		this.mntmNormalGrey.addActionListener(this);
+		this.mnNokia.add(this.mntmNormalGrey);
+		
+		this.mntmNormalTransit = new JMenuItem("Normal (Transit)");
+		this.mntmNormalTransit.addActionListener(this);
+		this.mnNokia.add(this.mntmNormalTransit);
+		
+		this.mntmSatellite = new JMenuItem("Satellite");
+		this.mntmSatellite.addActionListener(this);
+		this.mnNokia.add(this.mntmSatellite);
+		
+		this.mntmTerrain = new JMenuItem("Terrain");
+		this.mntmTerrain.addActionListener(this);
+		this.mnNokia.add(this.mntmTerrain);
+		
 	}
 
 	@Override
 	public void menuCanceled(MenuEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void menuDeselected(MenuEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void menuSelected(MenuEvent e) {
-		// TODO Auto-generated method stub
 		Object src = (Object) e.getSource();
 		if(src==null) {
 			
@@ -126,7 +217,6 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
 		Object src = (Object) e.getSource();
 		if(src == mntmOpen) {
 			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -145,6 +235,223 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 			rs.pack();
 		    rs.setVisible(true);
 		}
-	}
+		if(src == chckbxmntmColors) {
+			map.setColorsHidden(chckbxmntmColors.isSelected());
+		}
+		if(src == chckbxmntmColorValues) {
+			map.setColorValuesHidden(chckbxmntmColorValues.isSelected());
+		}
+		if(src == mntmGhybrid) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://mt1.google.com/vt/lyrs=y",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"&x="+x+"&y="+y+"&z="+zoom;
+	            }
+	        };
+	        info.setDefaultZoomLevel(14);
+	        
+	        TileFactory tf = new DefaultTileFactory(info);
+	        map.setTileFactory(tf);
+	        map.setCenterPosition(new GeoPosition(41.3167,-105.5833));
+	        map.setZoomSliderVisible(true);
+	        map.setZoom(14);
+		}
+		if(src == mntmGSatellite) {
+			TileFactoryInfo info = new TileFactoryInfo(0,13,13,
+	                256, true, true,
+	                "http://khm1.google.com/kh/v=59",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"&x="+x+"&y="+y+"&z="+zoom;
+	            }
+	        };
+	        info.setDefaultZoomLevel(13);
+	        
+	        TileFactory tf = new DefaultTileFactory(info);
+	        map.setTileFactory(tf);
+	        map.setCenterPosition(new GeoPosition(41.3167,-105.5833));
+	        map.setZoomSliderVisible(true);
+	        map.setZoom(13);
+		}
+		if(src == mntmGstreet1) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://mt0.google.com/vt/",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"x="+x+"&y="+y+"&z="+zoom;
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+	        
+	        TileFactory tf = new DefaultTileFactory(info);
+	        map.setTileFactory(tf);
+	        map.setCenterPosition(new GeoPosition(41.3167,-105.5833));
+	        map.setZoomSliderVisible(true);
+	        map.setZoom(15);
+		}
+		if (src == mntmGstreet2) {
+			TileFactoryInfo info = new TileFactoryInfo(0, 17, 17, 256, true,
+					true, "http://mt1.google.com/vt/lyrs=m", "x", "y", "z") {
+				public String getTileUrl(int x, int y, int zoom) {
+					zoom = 17 - zoom;
+					return this.baseURL + "&x=" + x + "&y=" + y + "&z=" + zoom;
+				}
+			};
+			info.setDefaultZoomLevel(15);
 
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if (src == mntmGTerrain) {
+			TileFactoryInfo info = new TileFactoryInfo(0, 17, 17, 256, true,
+					true, "http://mt1.google.com/vt/lyrs=p&", "x", "y", "z") {
+				public String getTileUrl(int x, int y, int zoom) {
+					zoom = 17 - zoom;
+					return this.baseURL + "x=" + x + "&y=" + y + "&z=" + zoom;
+				}
+			};
+			info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if (src == mntmOpenStreetMap) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://tile.openstreetmap.org",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+".png";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if (src == mntmMapQuest) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://otile1.mqcdn.com/tiles/1.0.0/osm/",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+".png";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if(src == mntmNormal) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://maptile.maps.svc.ovi.com/maptiler/maptile/newest/normal.day",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+"/256/png8";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if(src == mntmNormalGrey) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://maptile.maps.svc.ovi.com/maptiler/maptile/newest/normal.day.grey",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+"/256/png8";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if(src == mntmNormalTransit) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://maptile.maps.svc.ovi.com/maptiler/maptile/newest/normal.day.transit",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+"/256/png8";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if(src == mntmSatellite) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://maptile.maps.svc.ovi.com/maptiler/maptile/newest/satellite.day",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+"/256/png8";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+		if(src == mntmTerrain) {
+			TileFactoryInfo info = new TileFactoryInfo(0,17,17,
+	                256, true, true,
+	                "http://maptile.maps.svc.ovi.com/maptiler/maptile/newest/terrain.day",
+	                "x","y","z") {
+	            public String getTileUrl(int x, int y, int zoom) {
+	                zoom = 17-zoom;
+	                return this.baseURL +"/"+zoom+"/"+x+"/"+y+"/256/png8";
+	            }
+	        };
+	        info.setDefaultZoomLevel(15);
+
+			TileFactory tf = new DefaultTileFactory(info);
+			map.setTileFactory(tf);
+			map.setCenterPosition(new GeoPosition(41.3167, -105.5833));
+			map.setZoomSliderVisible(true);
+			map.setZoom(15);
+		}
+	}
 }

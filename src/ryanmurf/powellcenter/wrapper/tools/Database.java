@@ -129,7 +129,7 @@ public class Database {
 				v = rs.getDouble(1);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getSiteMaxLatitude");
 		}
 		return v;
 	}
@@ -144,7 +144,7 @@ public class Database {
 				v = rs.getDouble(1);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getSiteMinLatitude");
 		}
 		return v;
 	}
@@ -159,9 +159,40 @@ public class Database {
 				v = rs.getDouble(1);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getSiteMaxLongitude");
 		}
 		return v;
+	}
+	
+	public boolean getIsTableLayers(String table) {
+		List<String> columnNames = getTableColumnNames(table);
+		return contains(columnNames, "Soil_Layer");
+	}
+	
+	public int getMaxSoilLayer(String table) {
+		int v = 0;
+		try {
+			Statement statement = dbTables.createStatement();
+			statement.setQueryTimeout(45);
+			ResultSet rs = statement.executeQuery("SELECT MAX(Soil_Layer) FROM MAINDB."+table+";");
+			while (rs.next()) {
+				v = rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			System.out.println("Database : getMaxSoilLayer");
+		}
+		return v;
+	}
+	
+	public String[] getSoilLayers(String table) {
+		if(getIsTableLayers(table)) {
+			int max = getMaxSoilLayer(table);
+			String[] vals = new String[max];
+			for(int i=0; i<max; i++)
+				vals[i] = String.valueOf(i+1);
+			return vals;
+		}
+		return null;
 	}
 	
 	public double getSiteMinLongitude() {
@@ -174,7 +205,7 @@ public class Database {
 				v = rs.getDouble(1);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getSiteMinLongitude");
 		}
 		return v;
 	}
@@ -191,7 +222,7 @@ public class Database {
 				regions.add(region);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getRegions");
 		}
 		return regions;
 	}
@@ -208,7 +239,7 @@ public class Database {
 				ExperimentalLabels.add(label);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getExperimentalLabels");
 		}
 		return ExperimentalLabels;
 	}
@@ -225,7 +256,7 @@ public class Database {
 				ScenarioLabels.add(label);
 			}
 		} catch (SQLException e) {
-
+			System.out.println("Database : getScenarioLabels");
 		}
 		return ScenarioLabels;
 	}
@@ -374,11 +405,11 @@ public class Database {
 			
 			String regex;
 			if(response.contains("doy*"))
-				regex = response.split("*")[0] + "\\d++";
+				regex = response.split("\\*")[0] + "\\d++";
 			else
-				regex = response.split("*")[0] + "\\d++" + response.split("*")[1];
+				regex = response.split("\\*")[0] + "\\d++" + response.split("\\*")[1];
 			
-			for(String name : getTableColumnNames("aggregation_overall_mean")) {
+			for(String name : getTableColumnNames(Table)) {
 				if(name.matches(regex)) {
 					responseMatches.add(name);
 				}

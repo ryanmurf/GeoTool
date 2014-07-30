@@ -6,12 +6,9 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.jdesktop.swingx.JXMapViewer;
-import org.jdesktop.swingx.mapviewer.GeoBounds;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 
 public class Site extends Rectangle {
@@ -119,43 +116,5 @@ public class Site extends Rectangle {
 				g.draw(this);
 			}
 		}
-	}
-	
-	public static List<Site> getMask(List<Site> siteList, boolean interpolate) {
-		List<GeoPosition> geosites = new ArrayList<GeoPosition>();
-		for(Site s : siteList) {
-			geosites.add(s.pos[4]);
-		}
-		Set<GeoPosition> geoSet = new HashSet<GeoPosition>(geosites);
-		GeoBounds g = new GeoBounds(geoSet);
-		
-		ClosestPair.Pair p = ClosestPair.divideAndConquer(siteList);
-		double min = p.distance;
-		min = Math.max(min, .1125);
-		
-		GeoPosition TL = new GeoPosition(g.getNorthWest().getLongitude() - min/2, g.getNorthWest().getLatitude() + min/2);
-		GeoPosition BR = new GeoPosition(g.getSouthEast().getLongitude() + min/2, g.getSouthEast().getLatitude() - min/2);
-		int cellsHeight = (int) Math.ceil(((TL.getLatitude() - BR.getLatitude())/(min)));
-		int cellsWidth = (int) Math.ceil(((BR.getLongitude() - TL.getLongitude())/(min)));
-		
-		List<Site> raster = new ArrayList<Site>(cellsHeight*cellsWidth);
-		for(int i=0; i<cellsHeight; i++) {
-			for(int j=0; j<cellsWidth; j++) {
-				GeoPosition center = new GeoPosition(g.getNorthWest().getLongitude()-i*min, g.getNorthWest().getLatitude()+j*min);
-				Site n = new Site(center, min);
-				double num=0;
-				double den=0;
-				for(Site s : siteList) {
-					double w = 1/Math.pow(ClosestPair.distance(n, s), 16);
-					num += w*s.respValues.get(0);
-					den += w;
-				}
-				n.respValues.add(num/den);
-				raster.add(n);
-			}
-		}
-		
-		
-		return raster;
 	}
 }

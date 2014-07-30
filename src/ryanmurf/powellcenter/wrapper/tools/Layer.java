@@ -8,26 +8,44 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import javax.swing.JLabel;
 
 import org.jdesktop.swingx.JXMapViewer;
+import org.jdesktop.swingx.mapviewer.GeoBounds;
+import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.jdesktop.swingx.painter.Painter;
 
 public class Layer {
 
+	private class Indexer {
+		int idx = 0;
+	}
+	
 	final String layerName;
 	final List<Site> sites;
 	final List<Site> sitesMask;
 	final LinearGradientPaint2 paint;
-	final Integer valueIndex = new Integer(0);
+	final Indexer valueIndex = new Indexer();
 	
 	Painter<JXMapViewer> LayerOverlay;
 	MouseListener mouseListener;
 	MouseMotionListener mouseMotion;
 	boolean selected = false;
 	
-	public Layer(String name, List<Site> osites, List<Site> usitesMask) {
-		paint = new LinearGradientPaint2(0, 0, 0, 150, new float[] {0, 1.0f/3.0f, 2.0f/3.0f}, new Color[] {Color.red, Color.blue, Color.green});
+	private float[] twoColors = new float[] {0,1};
+	private float[] threeColors = new float[] {0,0.5f,1f};
+	
+	public Layer(String name, List<Site> osites, List<Site> usitesMask, Color[] colors) {
+		float[] select;
+		if(colors.length == 2)
+			select=twoColors;
+		else
+			select=threeColors;
+		paint = new LinearGradientPaint2(0, 0, 0, 150, select, colors);
 		this.layerName = name;
 		this.sites = osites;
 		this.sitesMask = usitesMask;
@@ -44,7 +62,7 @@ public class Layer {
 		        
 				for (Site s : sites) {
 					s.setMapPos(map);
-					s.draw(g, paint, valueIndex.intValue());
+					s.draw(g, paint, valueIndex.idx);
 				}
 				
 				g.dispose();
@@ -52,13 +70,24 @@ public class Layer {
 		};
 		
 	}
+	
+	public void setValueIndex(int index) {
+		this.valueIndex.idx = index;
+		setMaxMin();
+	}
+	
+	public int getNumberOfValues() {
+		return sites.get(0).respValues.size();
+	}
+	
 	public void setSelected() {
 		this.selected = true;
 	}
+	
 	public void setMaxMin() {
 		List<Float> values = new ArrayList<Float>();
 		for(Site s : sites) {
-			values.add(s.respValues.get(valueIndex).floatValue());
+			values.add(s.respValues.get(valueIndex.idx).floatValue());
 		}
 		paint.max = Collections.max(values).floatValue();
 		paint.min = Collections.min(values).floatValue();
@@ -70,25 +99,21 @@ public class Layer {
 
 				@Override
 				public void mouseReleased(MouseEvent e) {
-					// TODO Auto-generated method stub
 
 				}
 
 				@Override
 				public void mousePressed(MouseEvent e) {
-					// TODO Auto-generated method stub
 
 				}
 
 				@Override
 				public void mouseExited(MouseEvent e) {
-					// TODO Auto-generated method stub
 
 				}
 
 				@Override
 				public void mouseEntered(MouseEvent e) {
-					// TODO Auto-generated method stub
 
 				}
 
@@ -113,32 +138,86 @@ public class Layer {
 		return mouseListener;
 	}
 	
-	public MouseMotionListener getMouseMotionListener(final Map map) {
+	public void updateColors(float[] fracs, Color[] colors) {
+		float[] select;
+		if(colors.length == 2)
+			select=twoColors;
+		else
+			select=threeColors;
+		if(fracs == null)
+			fracs = select;
+		paint.setLinearGradient(0, 0, 0, 150, fracs, colors);
+	}
+	
+	public MouseMotionListener getMouseMotionListener(final Map map, final JLabel valueLabel) {
 		if (mouseMotion == null) {
 			mouseMotion = new MouseMotionListener() {
 
 				@Override
 				public void mouseMoved(MouseEvent e) {
-					// TODO Auto-generated method stub
 					Rectangle r = map.getMainMap().getViewportBounds();
 					int x = e.getX() + r.x;
 					int y = e.getY() + r.y;
 					for (Site s : sites) {
 						if (s.contains(x, y)) {
 							s.border = true;
+							valueLabel.setText(String.format("%.3f", s.respValues.get(valueIndex.idx)));
 							map.getMainMap().paintImmediately(
 									map.getMainMap().getBounds());
+						} else {
+							if(s.border == true) {
+								s.border = false;
+								map.getMainMap().paintImmediately(
+										map.getMainMap().getBounds());
+							}
 						}
 					}
 				}
 
 				@Override
 				public void mouseDragged(MouseEvent arg0) {
-					// TODO Auto-generated method stub
 
 				}
 			};
 		}
 		return mouseMotion;
+	}
+	
+	public static List<Site> getMask(List<Site> siteList, boolean interpolate, int power) {
+		List<GeoPosition> geosites = new ArrayList<GeoPosition>();
+		for(Site s : siteList) {
+			geosites.add(s.pos[4]);
+		}
+		Set<GeoPosition> geoSet = new HashSet<GeoPosition>(geosites);
+		GeoBounds g = new GeoBounds(geoSet);
+		
+		ClosestPair.Pair p = ClosestPair.divideAndConquer(siteList);
+		double min = p.distance;
+		min = Math.max(min, .1125);
+		
+		GeoPosition TL = new GeoPosition(g.getNorthWest().getLongitude() - min/2, g.getNorthWest().getLatitude() + min/2);
+		GeoPosition BR = new GeoPosition(g.getSouthEast().getLongitude() + min/2, g.getSouthEast().getLatitude() - min/2);
+		int cellsHeight = (int) Math.ceil(((TL.getLatitude() - BR.getLatitude())/(min)));
+		int cellsWidth = (int) Math.ceil(((BR.getLongitude() - TL.getLongitude())/(min)));
+		
+		List<Site> raster = new ArrayList<Site>(cellsHeight*cellsWidth);
+		for(int i=0; i<cellsHeight; i++) {
+			for(int j=0; j<cellsWidth; j++) {
+				GeoPosition center = new GeoPosition(g.getNorthWest().getLongitude()-i*min, g.getNorthWest().getLatitude()+j*min);
+				Site n = new Site(center, min);
+				double num=0;
+				double den=0;
+				for(Site s : siteList) {
+					double w = 1/Math.pow(ClosestPair.distance(n, s),  (double) power);
+					num += w*s.respValues.get(0);
+					den += w;
+				}
+				n.respValues.add(num/den);
+				raster.add(n);
+			}
+		}
+		
+		
+		return raster;
 	}
 }
