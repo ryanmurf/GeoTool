@@ -29,14 +29,13 @@ public class Database {
 	private Connection dbTables;
 	//private WeatherData weatherData;
 
-	private boolean scenarioData = false;
-	private boolean ensembleData = false;
+	boolean scenarioData = false;
+	boolean ensembleData = false;
 
 	public Database(String path) {
 
 		MainDatabase = Paths.get(path);
-		if (MainDatabase.getFileName().toString().toLowerCase()
-				.contains("current"))
+		if (MainDatabase.getFileName().toString().toLowerCase().contains("current"))
 			scenarioData = false;
 		else
 			scenarioData = true;
@@ -76,23 +75,34 @@ public class Database {
 
 			Statement statement = dbTables.createStatement();
 			statement.setQueryTimeout(45);
-			statement.executeQuery("ATTACH DATABASE '"
-					+ MainDatabase.toString() + "' AS 'MAINDB';");
-
-			if (ensembleData) {
-				for (Path p : ensemblesPaths) {
+			statement.executeQuery("ATTACH DATABASE '" + MainDatabase.toString() + "' AS 'MAINDB';");
+		} catch (SQLException e) {
+			//System.out.println("Database : Connect Problem MAINDB " + e.toString());
+		}
+		if (ensembleData) {
+			for (Path p : ensemblesPaths) {
+				String ensembleDBname = getEnsembleDatabaseName(p).toUpperCase();
+				try {
+					Statement statement = dbTables.createStatement();
+					statement.setQueryTimeout(45);
 					statement.executeQuery("ATTACH DATABASE '" + p.toString()
-							+ "' AS '" + getEnsembleDatabaseName(p) + "';");
+						+ "' AS '" + ensembleDBname + "';");
+				} catch(SQLException e) {
+					//System.out.println("Database : Connect Problem Ensemble " + e.toString());
 				}
 			}
-
-		} catch (SQLException e) {
-
 		}
+		//double check scenario data S
+		if(scenarioData) {
+			List<String> scenarios = getScenarioLabels();
+			if(scenarios.size() == 1)
+				scenarioData = false;
+		}
+		
 	}
 
 	String getEnsembleDatabaseName(Path ensemble) {
-		String name = ensemble.getFileName().toString().split(".")[0];
+		String name = ensemble.getFileName().toString().split("\\.")[0];
 		// dbEnsemble_aggregation_doy_AET
 		name = name.replace("doy_", "");
 		name = name.replace("dbEnsemble_aggregation_", "");
@@ -337,30 +347,35 @@ public class Database {
 				Statement statement = dbTables.createStatement();
 				statement.setQueryTimeout(45);
 				ResultSet rs = statement.executeQuery("SELECT name FROM "
-						+ ensembleDB
+						+ ensembleDB.toUpperCase()
 						+ ".sqlite_master WHERE type='table' ORDER BY name;");
 				while (rs.next()) {
 					String tablename = rs.getString("name");
 					names.add(tablename);
 				}
 			} catch (SQLException e) {
-				System.out.println("Database : Problem with getEnsembleTables");
+				System.out.println("Database : Problem with getEnsembleTables "+ e.toString());
 			}
 		}
 		return names;
 	}
 
-	List<String> getEnsembleFamiliesAndRanks(String ensembleDB) {
-		List<String> names = getEnsembleTables(ensembleDB);
-		List<String> Ensembles = new ArrayList<String>();
-		if (names.size() > 0) {
-			for (String name : names) {
-				if (name.toLowerCase().contains("_means")) {
-					Ensembles.add(name.replace("_means", ""));
+	List<String> getEnsembleFamiliesAndRanks() {
+		if (ensembleData) {
+			String ensembleDB = getEnsembleDatabaseName(this.ensemblesPaths.get(0));
+			List<String> names = getEnsembleTables(ensembleDB);
+			List<String> Ensembles = new ArrayList<String>();
+			if (names.size() > 0) {
+				for (String name : names) {
+					if (name.toLowerCase().contains("_means")) {
+						Ensembles.add(name.replace("_means", ""));
+					}
 				}
 			}
-		}
-		return Ensembles;
+			return Ensembles;
+		} else
+			return null;
+		
 	}
 
 	List<Site> getResponseValues(String table, String region,

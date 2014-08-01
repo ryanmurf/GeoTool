@@ -56,6 +56,8 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	private JMenuItem mntmNormalTransit;
 	private JMenuItem mntmSatellite;
 	private JMenuItem mntmTerrain;
+	private JMenu mnEdit;
+	private JMenuItem mntmLayers;
 	
 	/**
 	 * Launch the application.
@@ -121,6 +123,13 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		
 		this.mntmExit = new JMenuItem("Exit");
 		this.mnFile.add(this.mntmExit);
+		
+		this.mnEdit = new JMenu("Edit");
+		this.menuBar.add(this.mnEdit);
+		
+		this.mntmLayers = new JMenuItem("Layers");
+		this.mntmLayers.addActionListener(this);
+		this.mnEdit.add(this.mntmLayers);
 		
 		this.mnView = new JMenu("View");
 		this.menuBar.add(this.mnView);
@@ -240,6 +249,11 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		}
 		if(src == chckbxmntmColorValues) {
 			map.setColorValuesHidden(chckbxmntmColorValues.isSelected());
+		}
+		if(src == mntmLayers) {
+			Layers t = new Layers(map.layers);
+			t.pack();
+		    t.setVisible(true);
 		}
 		if(src == mntmGhybrid) {
 			TileFactoryInfo info = new TileFactoryInfo(0,17,17,

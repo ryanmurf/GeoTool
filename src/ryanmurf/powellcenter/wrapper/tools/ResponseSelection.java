@@ -1,5 +1,6 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
@@ -26,6 +27,7 @@ import javax.swing.JFormattedTextField;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JTextField;
+import javax.swing.JRadioButton;
 
 public class ResponseSelection extends JFrame implements ActionListener, ItemListener {
 	private static final long serialVersionUID = 1L;
@@ -83,6 +85,11 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 	private JLabel lblSoilLayer;
 	private JComboBox<String> comboBoxLayers;
 	private JCheckBox chckbxBoundingUse;
+	private JLabel lblGridSize;
+	private JFormattedTextField formattedTextFieldGridSize;
+	private JRadioButton rdbtnEnsembles;
+	private JRadioButton rdbtnScenarios;
+	private ButtonGroup rdbtnGroup;
 	
 	private class GetData implements Runnable {
 
@@ -110,6 +117,33 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		comboBox_Table.setModel(new DefaultComboBoxModel<String>(sTables));
 		comboBox_Table.setSelectedIndex(0);
 		
+		if(data.ensembleData && data.scenarioData) {
+			rdbtnEnsembles.setVisible(true);
+			rdbtnEnsembles.setSelected(true);
+			rdbtnScenarios.setVisible(true);
+			rdbtnScenarios.setSelected(false);
+		} else if(data.ensembleData && !data.scenarioData) {
+			rdbtnEnsembles.setVisible(true);
+			rdbtnEnsembles.setSelected(true);
+			rdbtnScenarios.setVisible(false);
+			rdbtnScenarios.setSelected(false);
+		} else if(!data.ensembleData && data.scenarioData) {
+			rdbtnEnsembles.setVisible(false);
+			rdbtnEnsembles.setSelected(false);
+			rdbtnScenarios.setVisible(true);
+			rdbtnScenarios.setSelected(true);
+		} else if(!data.ensembleData && !data.scenarioData) {
+			//only current values are set
+			rdbtnGroup.remove(rdbtnEnsembles);
+			rdbtnGroup.remove(rdbtnScenarios);
+			rdbtnEnsembles.setVisible(false);
+			rdbtnEnsembles.setSelected(false);
+			rdbtnScenarios.setVisible(false);
+			rdbtnScenarios.setSelected(false);
+		}
+		rdbtnScenarios.addActionListener(this);
+		rdbtnEnsembles.addActionListener(this);
+		
 		if (data.contains(headerColumns, "Experimental_Label")) {
 			List<String> experimentals = data.getExperimentalLabels();
 			String[] sExperimentals = experimentals.toArray(new String[experimentals.size()]);
@@ -119,17 +153,14 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 			ExperimentalPanel.setVisible(false);
 		}
 		{
-			List<String> scenarios = data.getScenarioLabels();
-			String[] sScenarios = scenarios.toArray(new String[scenarios.size()]);
-			comboBox_Scenario.setModel(new DefaultComboBoxModel<String>(sScenarios));
-			comboBox_Scenario.setSelectedIndex(0);
+			loadScenarioEorS();
 		}
 		if (data.contains(headerColumns, "Region")) {
 			List<Integer> regions = data.getRegions();
 			String[] sRegions = new String[regions.size()+1];
 			sRegions[0] = "All";
 			for(int i=1; i<regions.size()+1; i++)
-				sRegions[i] = String.valueOf(regions.get(i));
+				sRegions[i] = String.valueOf(regions.get(i-1));
 			comboBox_Region.setModel(new DefaultComboBoxModel<String>(sRegions));
 			comboBox_Region.setSelectedIndex(0);
 		} else {
@@ -144,6 +175,30 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		}
 		{
 			setResponseNames();
+		}
+	}
+	
+	private void loadScenarioEorS() {
+		if(rdbtnScenarios.isSelected()) {
+			List<String> scenarios = data.getScenarioLabels();
+			String[] sScenarios = scenarios.toArray(new String[scenarios.size()]);
+			comboBox_Scenario.setModel(new DefaultComboBoxModel<String>(sScenarios));
+			comboBox_Scenario.setSelectedIndex(0);
+		} else if(rdbtnEnsembles.isSelected()) {
+			List<String> ensemble = data.getEnsembleFamiliesAndRanks();
+			String[] sEnsemble = ensemble.toArray(new String[ensemble.size()+1]);
+			for(int i=0; i<ensemble.size()+1; i++) {
+				if(i==0)
+					sEnsemble[i] = "Current";
+				else
+					sEnsemble[i] = ensemble.get(i-1);
+			}
+			comboBox_Scenario.setModel(new DefaultComboBoxModel<String>(sEnsemble));
+			comboBox_Scenario.setSelectedIndex(0);
+		} else {
+			//only Current data
+			comboBox_Scenario.setModel(new DefaultComboBoxModel<String>(new String[] {"Current"}));
+			comboBox_Scenario.setSelectedIndex(0);
 		}
 	}
 	
@@ -175,6 +230,37 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 	public JPanel getResponseSelection() {
 		JPanel ResponsePanel = new JPanel();
 		ResponsePanel.setLayout(new BoxLayout(ResponsePanel, BoxLayout.Y_AXIS));
+		
+		this.LayerNamePanel = new JPanel();
+		FlowLayout flowLayout_2_1 = (FlowLayout) this.LayerNamePanel.getLayout();
+		flowLayout_2_1.setAlignment(FlowLayout.LEFT);
+		ResponsePanel.add(this.LayerNamePanel);
+		
+		this.lblLayerName = new JLabel("Layer Name:");
+		this.LayerNamePanel.add(this.lblLayerName);
+		
+		this.textField_LayerName = new JTextField();
+		this.LayerNamePanel.add(this.textField_LayerName);
+		this.textField_LayerName.setColumns(20);
+		
+		this.lblGridSize = new JLabel("Site Size:");
+		this.LayerNamePanel.add(this.lblGridSize);
+		
+		this.formattedTextFieldGridSize = new JFormattedTextField();
+		this.formattedTextFieldGridSize.setColumns(6);
+		this.formattedTextFieldGridSize.setText("0.3125");
+		this.LayerNamePanel.add(this.formattedTextFieldGridSize);
+		
+		this.rdbtnEnsembles = new JRadioButton("Ensembles");
+		this.rdbtnEnsembles.setSelected(true);
+		this.LayerNamePanel.add(this.rdbtnEnsembles);
+		
+		this.rdbtnScenarios = new JRadioButton("Scenarios");
+		this.LayerNamePanel.add(this.rdbtnScenarios);
+		
+		rdbtnGroup = new ButtonGroup();
+		rdbtnGroup.add(rdbtnEnsembles);
+		rdbtnGroup.add(rdbtnScenarios);
 		
 		this.TablePanel = new JPanel();
 		ResponsePanel.add(this.TablePanel);
@@ -348,6 +434,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 
 			this.comboBox_Response = new JComboBox<String>();
 			comboBox_Response.setMaximumSize(new Dimension(500, 75));
+			comboBox_Response.addItemListener(this);
 			this.comboBox_Response.setFont(new Font("Dialog", Font.PLAIN, 10));
 			this.RespPanel.add(this.comboBox_Response);
 		}
@@ -381,18 +468,6 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		this.comboBox_Power.setModel(new DefaultComboBoxModel<String>(new String[] {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"}));
 		this.InterpPanel.add(this.comboBox_Power);
 		
-		this.LayerNamePanel = new JPanel();
-		FlowLayout flowLayout_2 = (FlowLayout) this.LayerNamePanel.getLayout();
-		flowLayout_2.setAlignment(FlowLayout.LEFT);
-		ResponsePanel.add(this.LayerNamePanel);
-		
-		this.lblLayerName = new JLabel("Layer Name:");
-		this.LayerNamePanel.add(this.lblLayerName);
-		
-		this.textField_LayerName = new JTextField();
-		this.LayerNamePanel.add(this.textField_LayerName);
-		this.textField_LayerName.setColumns(10);
-		
 		this.ButtonPanel = new JPanel();
 		ResponsePanel.add(this.ButtonPanel);
 		
@@ -415,6 +490,9 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		Object src = e.getSource();
 		if(src == this.chckbxReduce) {
 			setResponseNames();
+		}
+		if(src == rdbtnEnsembles || src == rdbtnScenarios) {
+			loadScenarioEorS();
 		}
 		if(src == this.btnLoadMap) {
 			String table = (String) comboBox_Table.getSelectedItem();
@@ -439,6 +517,8 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 				}
 			}
 			
+			
+			
 			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause);
 			Layer l = new Layer(textField_LayerName.getText(), sites, null, map.getSelectedColors());
 			map.addLayer(l);
@@ -452,6 +532,11 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 				setResponseNames();
 				setLayersPanel();
 				this.pack();
+			}
+		}
+		if(src == comboBox_Response) {
+			if(e.getStateChange() == ItemEvent.SELECTED) {
+				this.textField_LayerName.setText((String) comboBox_Response.getSelectedItem());
 			}
 		}
 	}

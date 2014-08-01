@@ -1,5 +1,6 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
+import java.awt.Button;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
@@ -16,6 +17,8 @@ import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -43,7 +46,7 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	//final LinearGradientPaint2 paint;
 	final Integer valueIndex = new Integer(0);
 	
-	private final List<Layer> layers = new ArrayList<Layer>();
+	final List<Layer> layers = new ArrayList<Layer>();
 	private CompoundPainter<Painter<JXMapViewer>> cp;
 	private List<Painter<JXMapViewer>> painters = new ArrayList<Painter<JXMapViewer>>();
 
@@ -164,6 +167,10 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		};
 		
 		valueLabel = new JLabel();
+		valueLabel.setOpaque(true);
+		valueLabel.setBackground(new Color(255,250,250,150));
+		valueLabel.setBorder(BorderFactory.createLineBorder(Color.black, 3));
+		valueLabel.setText("");
 		GridBagConstraints gbc_canvasL = new GridBagConstraints();
 		gbc_canvasL.anchor = GridBagConstraints.NORTHEAST;
 		gbc_canvasL.gridx = 1;
@@ -247,6 +254,9 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		this.getMainMap().addMouseListener(layer.getMouseListeners(this));
 		this.getMainMap().addMouseMotionListener(layer.getMouseMotionListener(this, valueLabel));
 		this.addLayerPainter(layer.LayerOverlay);
+		for(Layer l : layers)
+			l.selected = false;
+		layer.generateLayerPanel(this);
 		this.layers.add(layer);
 		this.layers.get(layers.size() - 1).setSelected();
 		updateCanvasScale();
@@ -259,6 +269,19 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		} else {
 			valueSlider.setVisible(false);
 		}
+	}
+	
+	public void deleteLayer(Layer layer) {
+		this.getMainMap().removeMouseListener(layer.getMouseListeners(this));
+		this.getMainMap().removeMouseMotionListener(layer.getMouseMotionListener(this, valueLabel));
+		this.removeLayerPainter(layer.LayerOverlay);
+		int ind = layers.indexOf(layer);
+		if(layer.selected)
+			if(ind < layers.size() - 1)
+				layers.get(ind + 1).selected = true;
+			else if(ind > 0)
+				layers.get(ind - 1).selected = true;
+		this.layers.remove(layer);
 	}
 	
 	private void addLayerPainter(Painter<JXMapViewer> painter) {
@@ -332,6 +355,17 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Object src = e.getSource();
+		if(src instanceof JButton) {
+			JButton t = (JButton) src;
+		}
+		for(Layer l : layers) {
+			if(src == l.layerVisible) {
+				getMainMap().paintImmediately(getMainMap().getBounds());
+			}
+			if(src == l.delete) {
+				this.deleteLayer(l);
+			}
+		}
 		if(src == textFieldHigh) {
 			try {
 				float high = Float.parseFloat(textFieldHigh.getText());

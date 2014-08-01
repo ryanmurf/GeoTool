@@ -3,6 +3,8 @@ package ryanmurf.powellcenter.wrapper.tools;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -12,17 +14,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 
 import org.jdesktop.swingx.JXMapViewer;
 import org.jdesktop.swingx.mapviewer.GeoBounds;
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 import org.jdesktop.swingx.painter.Painter;
 
-public class Layer {
+public class Layer implements ActionListener {
 
 	private class Indexer {
 		int idx = 0;
+		boolean mask = false;
 	}
 	
 	final String layerName;
@@ -39,7 +47,17 @@ public class Layer {
 	private float[] twoColors = new float[] {0,1};
 	private float[] threeColors = new float[] {0,0.5f,1f};
 	
+	JPanel LayerPanel;
+	JLabel LayerName;
+	JRadioButton Sites;
+	JRadioButton Mask;
+	ButtonGroup bGroup;
+	final JCheckBox layerVisible;
+	JButton delete;
+	
 	public Layer(String name, List<Site> osites, List<Site> usitesMask, Color[] colors) {
+		layerVisible = new JCheckBox("Visible");
+		
 		float[] select;
 		if(colors.length == 2)
 			select=twoColors;
@@ -55,17 +73,25 @@ public class Layer {
 		LayerOverlay = new Painter<JXMapViewer>() {
 			@Override
 			public void paint(Graphics2D g, JXMapViewer map, int w, int h) {
-				g = (Graphics2D) g.create();
-		        //convert from viewport to world bitmap
-		        Rectangle rect = map.getViewportBounds();
-		        g.translate(-rect.x, -rect.y);
-		        
-				for (Site s : sites) {
-					s.setMapPos(map);
-					s.draw(g, paint, valueIndex.idx);
+				if (layerVisible.isSelected()) {
+					g = (Graphics2D) g.create();
+					// convert from viewport to world bitmap
+					Rectangle rect = map.getViewportBounds();
+					g.translate(-rect.x, -rect.y);
+
+					if (valueIndex.mask) {
+						for (Site s : sitesMask) {
+							s.setMapPos(map);
+							s.draw(g, paint, valueIndex.idx);
+						}
+					} else {
+						for (Site s : sites) {
+							s.setMapPos(map);
+							s.draw(g, paint, valueIndex.idx);
+						}
+					}
+					g.dispose();
 				}
-				
-				g.dispose();
 			}
 		};
 		
@@ -123,7 +149,12 @@ public class Layer {
 					int x = e.getX() + r.x;
 					int y = e.getY() + r.y;
 					if ((e.getButton() == 1)) {
-						for (Site s : sites) {
+						List<Site> selected;
+						if(valueIndex.mask)
+							selected = sitesMask;
+						else
+							selected = sites;
+						for (Site s : selected) {
 							if (s.contains(x, y)) {
 								s.border = true;
 								map.getMainMap().paintImmediately(
@@ -158,7 +189,12 @@ public class Layer {
 					Rectangle r = map.getMainMap().getViewportBounds();
 					int x = e.getX() + r.x;
 					int y = e.getY() + r.y;
-					for (Site s : sites) {
+					List<Site> selected;
+					if(valueIndex.mask)
+						selected = sitesMask;
+					else
+						selected = sites;
+					for (Site s : selected) {
 						if (s.contains(x, y)) {
 							s.border = true;
 							valueLabel.setText(String.format("%.3f", s.respValues.get(valueIndex.idx)));
@@ -219,5 +255,51 @@ public class Layer {
 		
 		
 		return raster;
+	}
+	
+	public JPanel generateLayerPanel(Map map) {
+		LayerPanel = new JPanel();
+		
+		LayerName = new JLabel(this.layerName+" : ");
+		LayerPanel.add(LayerName);
+		
+		Sites = new JRadioButton("Sites");
+		LayerPanel.add(Sites);
+		
+		Mask = new JRadioButton("Mask");
+		if (sitesMask != null) {
+			if (sitesMask.size() != 0) {
+				Mask.setSelected(true);
+				LayerPanel.add(Mask);
+			} else {
+				Sites.setSelected(true);
+			}
+		} else {
+			Sites.setSelected(true);
+		}
+		
+		bGroup = new ButtonGroup();
+		bGroup.add(Sites);
+		if (sitesMask != null)
+			if(sitesMask.size() != 0)
+				bGroup.add(Mask);
+		
+		layerVisible.setSelected(true);
+		layerVisible.addActionListener(map);
+		LayerPanel.add(layerVisible);
+		
+		delete = new JButton("Delete");
+		delete.addActionListener(map);
+		LayerPanel.add(delete);
+		
+		return LayerPanel;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		Object src = e.getSource();
+		//if(src == layerVisible) {
+		//	
+		//}
 	}
 }
