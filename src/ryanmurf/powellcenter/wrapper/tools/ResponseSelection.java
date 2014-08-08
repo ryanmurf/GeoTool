@@ -1,7 +1,9 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
 import javax.swing.ButtonGroup;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.BoxLayout;
@@ -13,6 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.WindowEvent;
 import java.text.NumberFormat;
 import java.util.List;
 
@@ -22,12 +25,16 @@ import javax.swing.DefaultComboBoxModel;
 
 import java.awt.Font;
 import java.awt.Component;
+import java.io.IOException;
 
 import javax.swing.JFormattedTextField;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JTextField;
 import javax.swing.JRadioButton;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import ryanmurf.powellcenter.wrapper.tools.GeoDataExplorer.MaskInfo;
 
 public class ResponseSelection extends JFrame implements ActionListener, ItemListener {
 	private static final long serialVersionUID = 1L;
@@ -91,6 +98,10 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 	private JRadioButton rdbtnScenarios;
 	private ButtonGroup rdbtnGroup;
 	
+	Mask mask;
+	
+	private MaskInfo maskInfo;
+	
 	private class GetData implements Runnable {
 
 		@Override
@@ -100,11 +111,50 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		
 	}
 	
+	private class GetLayer implements Runnable {
+
+		@Override
+		public void run() {
+			String table = (String) comboBox_Table.getSelectedItem();
+			String region = (String) comboBox_Region.getSelectedItem();
+			String experimental = (String) comboBox_Experimental.getSelectedItem();
+			String scenario = (String) comboBox_Scenario.getSelectedItem();
+			String response = (String) comboBox_Response.getSelectedItem();
+			String whereClause = "";
+			if(LayerPanel.isVisible()) {
+				whereClause += "Soil_Layer = "+(String) comboBoxLayers.getSelectedItem();
+			}
+			if(chckbxBoundingUse.isSelected()) {
+				if(whereClause.length() != 0)
+					whereClause += " AND ";
+				else {
+					String LongMin = String.valueOf(((Number) formattedTextField_LongMin.getValue()).doubleValue());
+					String LongMax = String.valueOf(((Number) formattedTextField_LongMax.getValue()).doubleValue());
+					
+					String LatMin = String.valueOf(((Number) formattedTextField_LatMin.getValue()).doubleValue());
+					String LatMax = String.valueOf(((Number) formattedTextField_LatMax.getValue()).doubleValue());
+					whereClause += "X_WGS84 BETWEEN "+LongMin+" AND "+LongMax+" AND Y_WGS84 BETWEEN "+LatMin+" AND "+LatMax;
+				}
+			}
+			
+			boolean genMask = chckbxGenerateMask.isSelected();
+			boolean Interpolate = chckbxShepardsMethod.isSelected();
+			int power = Integer.valueOf((String) comboBox_Power.getSelectedItem());
+			
+			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause, rdbtnScenarios.isSelected());
+			Layer l = new Layer(textField_LayerName.getText(), sites, map.getSelectedColors(), map, mask, genMask, Interpolate, power);
+			map.addLayer(l);
+			
+			dispatchEvent(new WindowEvent(ResponseSelection.this, WindowEvent.WINDOW_CLOSING));
+		}
+		
+	}
 	
-	public ResponseSelection(Database d, Map map) {
+	public ResponseSelection(Database d, Map map, MaskInfo maskInfo) {
 		super();
 		this.data = d;
 		this.map = map;
+		this.maskInfo = maskInfo;
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		this.getContentPane().add(getResponseSelection());
 	}
@@ -448,6 +498,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		this.MaskPanel.add(this.lblMask);
 		
 		this.btnLoadMask = new JButton("Load Mask");
+		this.btnLoadMask.addActionListener(this);
 		this.MaskPanel.add(this.btnLoadMask);
 		
 		this.chckbxGenerateMask = new JCheckBox("Generate Mask");
@@ -494,34 +545,53 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		if(src == rdbtnEnsembles || src == rdbtnScenarios) {
 			loadScenarioEorS();
 		}
-		if(src == this.btnLoadMap) {
-			String table = (String) comboBox_Table.getSelectedItem();
-			String region = (String) comboBox_Region.getSelectedItem();
-			String experimental = (String) comboBox_Experimental.getSelectedItem();
-			String scenario = (String) comboBox_Scenario.getSelectedItem();
-			String response = (String) comboBox_Response.getSelectedItem();
-			String whereClause = "";
-			if(LayerPanel.isVisible()) {
-				whereClause += "Soil_Layer = "+(String) comboBoxLayers.getSelectedItem();
+		if(src == this.btnLoadMask) {
+			int nregion = 0;
+			String region = (String) this.comboBox_Region.getSelectedItem();
+			if (region != null) {
+				if (region.compareTo("All") == 0)
+					nregion = 0;
+				else
+					nregion = Integer.valueOf(region);
 			}
-			if(chckbxBoundingUse.isSelected()) {
-				if(whereClause.length() != 0)
-					whereClause += " AND ";
-				else {
-					String LongMin = String.valueOf(((Number) formattedTextField_LongMin.getValue()).doubleValue());
-					String LongMax = String.valueOf(((Number) formattedTextField_LongMax.getValue()).doubleValue());
-					
-					String LatMin = String.valueOf(((Number) formattedTextField_LatMin.getValue()).doubleValue());
-					String LatMax = String.valueOf(((Number) formattedTextField_LatMax.getValue()).doubleValue());
-					whereClause += "X_WGS84 BETWEEN "+LongMin+" AND "+LongMax+" AND Y_WGS84 BETWEEN "+LatMin+" AND "+LatMax;
+			mask = new Mask(nregion);
+			
+			JFileChooser fc;
+			
+			if(maskInfo.maskPath == null)
+				fc = new JFileChooser();
+			else
+				fc = new JFileChooser(maskInfo.maskPath.toFile());
+			
+			fc.setAcceptAllFileFilterUsed(false);
+	    	fc.setMultiSelectionEnabled(false);
+	    	fc.setFileFilter(new FileNameExtensionFilter("*", "asc"));
+	    	
+			fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			int returnVal = fc.showOpenDialog(null);
+
+	        if (returnVal == JFileChooser.APPROVE_OPTION) {
+	        	try {
+	        		maskInfo.maskPath = fc.getSelectedFile().toPath().getParent();
+					mask.read(fc.getSelectedFile().toPath());
+					this.btnLoadMask.setEnabled(false);
+					this.chckbxGenerateMask.setSelected(false);
+					this.chckbxGenerateMask.setEnabled(false);
+				} catch (IOException e1) {
+					e1.printStackTrace();
 				}
-			}
+	        } else {
+	        	JOptionPane.showMessageDialog(null, "Could not open file.","Alert", JOptionPane.ERROR_MESSAGE);
+	        }
+		}
+		if(src == this.btnLoadMap) {
+			this.btnLoadMap.setEnabled(false);
 			
-			
-			
-			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause);
-			Layer l = new Layer(textField_LayerName.getText(), sites, null, map.getSelectedColors());
-			map.addLayer(l);
+			Thread gettingData = new Thread(new GetLayer());
+			gettingData.run();
+		}
+		if(src == this.btnCancel) {
+			this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
 		}
 	}
 	@Override

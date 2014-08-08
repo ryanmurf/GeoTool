@@ -1,6 +1,5 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
-import java.awt.Button;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
@@ -18,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -46,7 +45,7 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	//final LinearGradientPaint2 paint;
 	final Integer valueIndex = new Integer(0);
 	
-	final List<Layer> layers = new ArrayList<Layer>();
+	final ListenableArrayList<Layer> layers = new ListenableArrayList<Layer>();
 	private CompoundPainter<Painter<JXMapViewer>> cp;
 	private List<Painter<JXMapViewer>> painters = new ArrayList<Painter<JXMapViewer>>();
 
@@ -65,7 +64,8 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	private JPanel left;
 	private JPanel right;
 	
-	private JSlider valueSlider;
+	JSlider valueSlider;
+	JCheckBox sameScale;
 	
 	private final JLabel valueLabel;
 	
@@ -108,23 +108,6 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	
 	public Map() {
 		super();
-		//paint = new LinearGradientPaint2(0, 0, 50, 50, new float[] {0, 1.0f/3.0f, 2.0f/3.0f}, new Color[] {Color.red, Color.blue, Color.green});
-		
-		//this.setDefaultProvider(DefaultProviders.OpenStreetMaps);
-		//TileFactoryInfo info = new TileFactoryInfo(0,17,17,
-        //        256, true, true,
-        //        "http://tile.openstreetmap.org",
-        //        "x","y","z") {
-        //    public String getTileUrl(int x, int y, int zoom) {
-        //        zoom = 17-zoom;
-        //        return this.baseURL +"/"+zoom+"/"+x+"/"+y+".png";
-        //    }
-        //};
-        //info.setDefaultZoomLevel(1);
-        
-       //TileFactory tf = new DefaultTileFactory(info);
-        //setTileFactory(tf);
-		
 		
         TileFactoryInfo info = new TileFactoryInfo(0,17,17,
                 256, true, true,
@@ -180,11 +163,23 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		valueSlider = new JSlider(SwingConstants.HORIZONTAL, 0, 1, 0);
 		valueSlider.addChangeListener(this);
 		valueSlider.setVisible(false);
+		
+		sameScale = new JCheckBox("Same Scale");
+		sameScale.setSelected(false);
+		sameScale.setVisible(false);
+		sameScale.addActionListener(this);
+		
+		JPanel slider = new JPanel();
+		slider.setOpaque(false);
+		slider.setBackground(new Color(0,0,0,0));
+		slider.add(valueSlider);
+		slider.add(sameScale);
+		
 		GridBagConstraints gbc_canvasS = new GridBagConstraints();
 		gbc_canvasS.anchor = GridBagConstraints.SOUTHWEST;
 		gbc_canvasS.gridx = 1;
 		gbc_canvasS.gridy = 0;
-		this.getMainMap().add(valueSlider, gbc_canvasS);
+		this.getMainMap().add(slider, gbc_canvasS);
 	
 		JPanel scale = new JPanel();
 		scale.setOpaque(false);
@@ -257,17 +252,20 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		for(Layer l : layers)
 			l.selected = false;
 		layer.generateLayerPanel(this);
+		layer.selected = true;
 		this.layers.add(layer);
-		this.layers.get(layers.size() - 1).setSelected();
+		//this.layers.get(layers.size() - 1).setSelected();
 		updateCanvasScale();
 		updateColorsAndNumbers();
 		int values = layer.getNumberOfValues();
 		if(values > 1) {
 			valueSlider.setVisible(true);
+			sameScale.setVisible(true);
 			valueSlider.setMinimum(0);
 			valueSlider.setMaximum(values-1);
 		} else {
 			valueSlider.setVisible(false);
+			sameScale.setVisible(false);
 		}
 	}
 	
@@ -282,6 +280,20 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 			else if(ind > 0)
 				layers.get(ind - 1).selected = true;
 		this.layers.remove(layer);
+		updateCanvasScale();
+		updateColorsAndNumbers();
+		for(Layer l : layers) {
+			if (l.selected) {
+				int values = l.getNumberOfValues();
+				if (values > 1) {
+					valueSlider.setVisible(true);
+					valueSlider.setMinimum(0);
+					valueSlider.setMaximum(values - 1);
+				} else {
+					valueSlider.setVisible(false);
+				}
+			}
+		}
 	}
 	
 	private void addLayerPainter(Painter<JXMapViewer> painter) {
@@ -292,7 +304,6 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		getMainMap().setOverlayPainter(cp);
 	}
 	
-	@SuppressWarnings("unused")
 	private void removeLayerPainter(Painter<JXMapViewer> painter) {
 		this.painters.remove(painter);
 		@SuppressWarnings("unchecked")
@@ -300,13 +311,26 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		this.cp.setPainters(paints);
 		getMainMap().setOverlayPainter(cp);
 	}
-	private void updateCanvasScale() {
+	public void updateCanvasScale() {
 		Graphics g = canvas.getGraphics();
 		Graphics2D g2 = (Graphics2D) g;
 		for(Layer l : layers) {
 			if(l.selected) {
 				g2.setPaint(l.paint);
 				g2.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+				
+				if (l.selected) {
+					int values = l.getNumberOfValues();
+					if (values > 1) {
+						valueSlider.setVisible(true);
+						sameScale.setVisible(true);
+						valueSlider.setMinimum(0);
+						valueSlider.setMaximum(values - 1);
+					} else {
+						valueSlider.setVisible(false);
+						sameScale.setVisible(false);
+					}
+				}
 			}
 		}
 	}
@@ -355,21 +379,19 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		Object src = e.getSource();
-		if(src instanceof JButton) {
-			JButton t = (JButton) src;
-		}
+		//if(src instanceof JButton) {
+		//	JButton t = (JButton) src;
+		//}
 		for(Layer l : layers) {
 			if(src == l.layerVisible) {
 				getMainMap().paintImmediately(getMainMap().getBounds());
-			}
-			if(src == l.delete) {
-				this.deleteLayer(l);
 			}
 		}
 		if(src == textFieldHigh) {
 			try {
 				float high = Float.parseFloat(textFieldHigh.getText());
 				getSelectedLayer().paint.max = high;
+				updateCanvasScale();
 				getMainMap().paintImmediately(getMainMap().getBounds());
 			} catch(NumberFormatException s) {
 				updateColorsAndNumbers();
@@ -392,6 +414,7 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 					float[] fracs = new float[] {0,fracMid,1};
 					selected.updateColors(fracs,getSelectedColors());
 				}
+				updateCanvasScale();
 				getMainMap().paintImmediately(getMainMap().getBounds());
 				
 			} catch(NumberFormatException s) {
@@ -402,10 +425,17 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 			try {
 				float low = Float.parseFloat(textFieldLow.getText());
 				getSelectedLayer().paint.min = low;
+				updateCanvasScale();
 				getMainMap().paintImmediately(getMainMap().getBounds());
 			} catch(NumberFormatException s) {
 				updateColorsAndNumbers();
 			}
+		}
+		if(src == sameScale) {
+			getSelectedLayer().setValueIndex(valueSlider.getValue());
+			updateCanvasScale();
+			updateColorsAndNumbers();
+			getMainMap().paintImmediately(getMainMap().getBounds());
 		}
 	}
 
@@ -415,6 +445,7 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		if(src == jcomboBoxHighValue || src == jcomboBoxMidValue || src == jcomboBoxLowValue) {
 			if(e.getStateChange() == ItemEvent.SELECTED) {
 				getSelectedLayer().updateColors(null,getSelectedColors());
+				updateCanvasScale();
 				updateColorsAndNumbers();
 				getMainMap().paintImmediately(getMainMap().getBounds());
 			}
@@ -427,6 +458,7 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 		if(src == valueSlider) {
 			if (!valueSlider.getValueIsAdjusting()) {
 				getSelectedLayer().setValueIndex(valueSlider.getValue());
+				updateCanvasScale();
 				updateColorsAndNumbers();
 				getMainMap().paintImmediately(getMainMap().getBounds());
 			}

@@ -3,6 +3,7 @@ package ryanmurf.powellcenter.wrapper.tools;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.nio.file.Path;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -59,6 +60,12 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	private JMenu mnEdit;
 	private JMenuItem mntmLayers;
 	
+	public class MaskInfo {
+		Path maskPath;
+	}
+	MaskInfo maskInfo = new MaskInfo();
+	private JSeparator separator_3;
+	private JMenuItem mntmHistogram;
 	/**
 	 * Launch the application.
 	 */
@@ -204,6 +211,13 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		this.mntmTerrain.addActionListener(this);
 		this.mnNokia.add(this.mntmTerrain);
 		
+		this.separator_3 = new JSeparator();
+		this.mnView.add(this.separator_3);
+		
+		this.mntmHistogram = new JMenuItem("Histogram");
+		this.mntmHistogram.addActionListener(this);
+		this.mnView.add(this.mntmHistogram);
+		
 	}
 
 	@Override
@@ -240,9 +254,9 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	        }
 		}
 		if(src == mntmNewMap) {
-			rs = new ResponseSelection(data, map);
+			rs = new ResponseSelection(data, map, maskInfo);
 			rs.pack();
-		    rs.setVisible(true);
+		    rs.setVisible(true); 
 		}
 		if(src == chckbxmntmColors) {
 			map.setColorsHidden(chckbxmntmColors.isSelected());
@@ -251,9 +265,12 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 			map.setColorValuesHidden(chckbxmntmColorValues.isSelected());
 		}
 		if(src == mntmLayers) {
-			Layers t = new Layers(map.layers);
+			Layers t = new Layers(map.layers, map);
 			t.pack();
 		    t.setVisible(true);
+		}
+		if(src == mntmHistogram) {
+			this.map.getSelectedLayer().showChart();
 		}
 		if(src == mntmGhybrid) {
 			TileFactoryInfo info = new TileFactoryInfo(0,17,17,

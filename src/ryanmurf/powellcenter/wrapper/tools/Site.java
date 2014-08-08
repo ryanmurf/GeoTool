@@ -62,7 +62,17 @@ public class Site extends Rectangle {
 		pos[2] = BL;
 		pos[3] = BR;
 		
-		pos[4] = new GeoPosition((UR.getLatitude()-BL.getLatitude())/2, (UR.getLongitude()-BL.getLongitude())/2);
+		pos[4] = new GeoPosition(BL.getLatitude()+(UR.getLatitude()-BL.getLatitude())/2, BL.getLongitude()+(UR.getLongitude()-BL.getLongitude())/2);
+	}
+	
+	public boolean contains(GeoPosition point) {
+		double lat = point.getLatitude();
+		double lng = point.getLongitude();
+		
+		if(lng >= pos[0].getLongitude() && lng <= pos[1].getLongitude() && lat <= pos[0].getLatitude() && lat >= pos[2].getLatitude())
+			return true;
+		else
+			return false;
 	}
 	
 	public double arcSecondsToXYsize(double arcSecondsGridSize) {
@@ -93,11 +103,11 @@ public class Site extends Rectangle {
 		this.setSize(sizeX, sizeY);
 	}
 
-	public void draw(Graphics2D g, LinearGradientPaint2 paint, int valueIndex) {
+	public void draw(Graphics2D g, LinearGradientPaint2 paint, int Alpha, int valueIndex) {
 		if(draw) {
 			float respValue = respValues.get(valueIndex).floatValue();
 			Color o = paint.getColorAt(paint.getFraction(respValue));
-			Color c = new Color(o.getRed(), o.getGreen(), o.getBlue(), 210);
+			Color c = new Color(o.getRed(), o.getGreen(), o.getBlue(), Alpha);
 			
 			g.setColor(c);
 			g.fill(this);
@@ -106,7 +116,7 @@ public class Site extends Rectangle {
 				g.draw(this);
 			} else {
 				g.setStroke(new BasicStroke(1f));
-				c = new Color(o.getRed(), o.getGreen(), o.getBlue(), 255);
+				c = new Color(o.getRed(), o.getGreen(), o.getBlue(), Alpha);
 				g.setColor(c);
 				g.draw(this);
 			}

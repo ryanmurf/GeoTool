@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.JOptionPane;
+
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 
 public class Database {
@@ -379,7 +381,7 @@ public class Database {
 	}
 
 	List<Site> getResponseValues(String table, String region,
-			String experimental, String scenario, String response, String whereClause) {
+			String experimental, String scenario, String response, String whereClause, boolean bScenario) {
 		
 		if(region == null)
 			region = "";
@@ -393,11 +395,11 @@ public class Database {
 		}
 		String database = "";
 		String Table = "";
-		if (scenarioData) {
+		if (scenarioData && bScenario) {
 			database = "MAINDB";
 			Table = table;
 		} else {
-			if (ensembleData) {
+			if (ensembleData && !bScenario) {
 				if (current) {
 					database = "MAINDB";
 					Table = table;
@@ -454,7 +456,11 @@ public class Database {
 		if(contains(headerColumns,"Y_WGS84"))
 			headerColumn += "MAINDB.header.Y_WGS84 AS Y_WGS84";
 		
-		String sql = "SELECT "+headerColumn+", "+response+" FROM "+dbtable+" INNER JOIN MAINDB.header ON "+dbtable+".P_id=MAINDB.header.P_id WHERE MAINDB.header.Experimental_Label='"+experimental+"' AND MAINDB.header.Scenario='"+scenario+"'";
+		String sqlExperimental = "";
+		if(experimental != null) {
+			sqlExperimental = "MAINDB.header.Experimental_Label='"+experimental+"' AND ";
+		}
+		String sql = "SELECT "+headerColumn+", "+response+" FROM "+dbtable+" INNER JOIN MAINDB.header ON "+dbtable+".P_id=MAINDB.header.P_id WHERE "+sqlExperimental+"MAINDB.header.Scenario='"+scenario+"'";
 		if(whereClause.length() != 0)
 			sql += " AND "+whereClause;
 		if(region.compareTo("All") != 0 && contains(headerColumns,"Region")) {
@@ -486,8 +492,11 @@ public class Database {
 				sites.add(s);
 			}
 		} catch (SQLException e) {
+			JOptionPane.showMessageDialog(null, "Could not get response\n"+sql+"\n"+e.toString(), "alert", JOptionPane.ERROR_MESSAGE);
 			System.out.println("Could not get response\n"+sql);
 		}
+		if(sites.size() == 0)
+			JOptionPane.showMessageDialog(null, "Zero Sites Selected", "alert", JOptionPane.ERROR_MESSAGE);
 		//return Site.getMask(sites, true);
 		return sites;
 	}

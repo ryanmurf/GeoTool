@@ -18,6 +18,7 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/GeoTool/sqlite-jdbc-3.7.15-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="jcommon-1.0.23.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JsoilWat"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SoilWatExplorer"/>
 	<classpathentry kind="output" path="bin"/>
