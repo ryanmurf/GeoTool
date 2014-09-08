@@ -30,7 +30,6 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	private JMenuBar menuBar;
 	private JMenuItem mntmOpen;
 	private JMenu mnFile;
-	private JSeparator separator;
 	private JMenuItem mntmNewMap;
 	private JSeparator separator_1;
 	private JMenuItem mntmExit;
@@ -66,6 +65,8 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	MaskInfo maskInfo = new MaskInfo();
 	private JSeparator separator_3;
 	private JMenuItem mntmHistogram;
+	private JMenu mnTools;
+	private JMenuItem mntmDataExtraction;
 	/**
 	 * Launch the application.
 	 */
@@ -113,17 +114,9 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		this.mnFile = new JMenu("File");
 		this.menuBar.add(this.mnFile);
 		
-		this.mntmOpen = new JMenuItem("Open");
+		this.mntmOpen = new JMenuItem("Open Database");
 		this.mntmOpen.addActionListener(this);
 		this.mnFile.add(this.mntmOpen);
-		
-		this.separator = new JSeparator();
-		this.mnFile.add(this.separator);
-		
-		this.mntmNewMap = new JMenuItem("New Map");
-		this.mntmNewMap.setEnabled(false);
-		this.mntmNewMap.addActionListener(this);
-		this.mnFile.add(this.mntmNewMap);
 		
 		this.separator_1 = new JSeparator();
 		this.mnFile.add(this.separator_1);
@@ -137,6 +130,19 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		this.mntmLayers = new JMenuItem("Layers");
 		this.mntmLayers.addActionListener(this);
 		this.mnEdit.add(this.mntmLayers);
+		
+		this.mntmNewMap = new JMenuItem("New Layer");
+		this.mnEdit.add(this.mntmNewMap);
+		this.mntmNewMap.setEnabled(false);
+		this.mntmNewMap.addActionListener(this);
+		
+		this.mnTools = new JMenu("Tools");
+		this.menuBar.add(this.mnTools);
+		
+		this.mntmDataExtraction = new JMenuItem("Data Extraction");
+		this.mntmDataExtraction.setEnabled(false);
+		this.mntmDataExtraction.addActionListener(this);
+		this.mnTools.add(this.mntmDataExtraction);
 		
 		this.mnView = new JMenu("View");
 		this.menuBar.add(this.mnView);
@@ -249,6 +255,7 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	        	this.dbFilePath = fc.getSelectedFile().toPath().toString();
 	        	this.data = new Database(this.dbFilePath);
 	        	this.mntmNewMap.setEnabled(true);
+	        	this.mntmDataExtraction.setEnabled(true);
 	        } else {
 	        	JOptionPane.showMessageDialog(null, "Could not open file.","Alert", JOptionPane.ERROR_MESSAGE);
 	        }
@@ -257,6 +264,11 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 			rs = new ResponseSelection(data, map, maskInfo);
 			rs.pack();
 		    rs.setVisible(true); 
+		}
+		if(src == mntmDataExtraction) {
+			ExtractionTool tl = new ExtractionTool(data);
+			tl.pack();
+			tl.setVisible(true);
 		}
 		if(src == chckbxmntmColors) {
 			map.setColorsHidden(chckbxmntmColors.isSelected());

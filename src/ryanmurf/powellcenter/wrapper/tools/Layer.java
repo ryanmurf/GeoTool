@@ -70,7 +70,7 @@ public class Layer implements ActionListener {
 	
 	final Map map;
 	
-	public Layer(String name, List<Site> osites, Color[] colors, Map map, Mask mask, boolean genMask, boolean interpolate, int power) {
+	public Layer(String name, List<Site> osites, Color[] colors, Map map, Mask mask, boolean genMask, boolean interpolate, int power, double gridSize) {
 		this.map = map;
 		layerVisible = new JCheckBox("Visible");
 		
@@ -83,7 +83,7 @@ public class Layer implements ActionListener {
 		this.layerName = name;
 		this.sites = osites;
 		if(genMask) {
-			this.sitesMask = getMask(interpolate, power);
+			this.sitesMask = getMask(interpolate, power, gridSize);
 			this.valueIndex.mask = true;
 		} else if(mask != null) {
 			setMask(mask, interpolate, power);
@@ -309,7 +309,7 @@ public class Layer implements ActionListener {
 		}
 	}
 	
-	public List<Site> getMask(boolean interpolate, int power) {
+	public List<Site> getMask(boolean interpolate, int power, double minSize) {
 		List<GeoPosition> geosites = new ArrayList<GeoPosition>();
 		for(Site s : sites) {
 			geosites.add(s.pos[4]);
@@ -319,7 +319,7 @@ public class Layer implements ActionListener {
 		
 		ClosestPair.Pair p = ClosestPair.divideAndConquer(sites);
 		double min = p.distance;
-		min = Math.max(min, .1125);
+		min = Math.max(min, minSize);
 		
 		GeoPosition TL = new GeoPosition(g.getNorthWest().getLongitude() - min/2, g.getNorthWest().getLatitude() + min/2);
 		GeoPosition BR = new GeoPosition(g.getSouthEast().getLongitude() + min/2, g.getSouthEast().getLatitude() - min/2);

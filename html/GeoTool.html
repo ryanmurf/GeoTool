@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<meta name="generator" content="Bluefish 2.2.5" >
+<meta name="author" content="Ryan Murphy" >
+<meta name="date" content="2014-09-03T22:27:41-0600" >
+<meta name="copyright" content="2014">
+<meta name="keywords" content="GeoTool,Powell Data, Soilwat">
+<meta name="description" content="A guide to using GeoTool to look at and extract Powell Center Data">
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8">
+<meta http-equiv="content-style-type" content="text/css">
+<meta http-equiv="expires" content="0">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+body {margin-left: 5%; margin-right: 5%;}
+
+H1 {             
+    background: white;
+    color: rgb(25%, 25%, 25%);
+    font-family: monospace;
+    font-size: xx-large;
+    text-align: center
+}
+
+H2 {
+    background: white;
+    color: rgb(40%, 40%, 40%);
+    font-family: monospace;
+    font-size: x-large;
+    text-align: center
+}
+
+H3 {
+    background: white;
+    color: rgb(40%, 40%, 40%);
+    font-family: monospace;
+    font-size: large
+}
+
+H4 {
+    background: white;
+    color: rgb(40%, 40%, 40%);
+    font-family: monospace
+}
+
+span.samp{font-family: monospace}
+span.command{font-family: monospace}
+span.option{font-family: monospace}
+span.file{font-family: monospace}
+span.env{font-family: monospace}
+
+ul {
+    margin-top: 0.25ex;
+    margin-bottom: 0.25ex;
+}
+li {
+    margin-top: 0.25ex;
+    margin-bottom: 0.25ex;
+}
+p {
+    margin-top: 0.6ex;
+    margin-bottom: 1.2ex;
+}
+
+-->
+</style>
+</head>
+<body bgcolor="#FFFFFF" text="#000000">
+	<h1 class="settitle" align="center">Analysis of SoilWat_R_Wrapper Database Using GeoTool</h1>
+	<a name="SEC_Contents"></a>
+	<h2 class="contents-heading">Table of Contents</h2>
+	<div class="contents">
+	<ul class="no-bullet">
+		<li><a name="Introduction" href="#Introduction">Introduction</a></li>
+		<li><a name="Setup and Install" href="#Setup">Setup and Install</a></li>
+		<li><a name="Connect to Database" href="#Connect">Connect</a></li>
+		<li><a name="Create Layer" href="#Add">Create Layer</a></li>
+		<li><a name="Viewing Layer" href="#View">Viewing Layers</a></li>
+		<li><a name="Selecting Layer" href="#Layers">Selecting Layers</a></li>
+		<li><a name="View Menu" href="#ViewMenu">View Menu</a></li>
+		<li><a name="Extraction Tool" href="#Extraction">Data Extraction Tool</a></li>
+		<li><a name="Source Code" href="#Source">Source Code</a></li>
+	</ul>
+	</div>
+	
+	
+	<hr>
+	<a name="Introduction"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Introduction-1"></a>
+	<h2 class="unnumbered">Introduction</h2>
+	<p>GeoTool is a Java desktop slippery map application to view geographical related data generated from the SoilWat_R_Wrapper. Usually this data is in a gridded format and is stored in sqlite3 database(s). To learn more about SoilWat_R_Wrapper follow this link <a href="https://github.com/Burke-Lauenroth-Lab/SoilWat_R_Wrapper">SoilWat_R_Wrapper</a>. To learn more about the output database(s) of SoilWat_R_Wrapper see this document <a href="../../../SoilWat_R_Wrapper/Database_Stuff/Primer_SQLdatabase_v2.docx">database primer</a>. You can mouse over cell sites to view value. Add multiple layers and switch between the selected value. Transparency can be adjusted on the layers. You can slide through daily values. You can view a histogram of the selected layer data. You can switch between map tile sources. It also as a data extraction feature.</p>
+	
+	<hr>
+	<a name="Setup"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Setup-1"></a>
+	<h2 class="unnumbered">Setup and Install</h2>
+	<p>GeoTool is a java desktop application and therefore needs Java runtime or JRE on your computer. Java will work on any OS. To install the JRE simple follow this <a href="https://java.com/en/download/index.jsp">link</a> and download and install the software. After that is installed or updated, download the GeoTool from <a href="../../GeoTool.jar">here</a>. You should be able to run it like any other stand alone application.</p>
+	
+	<hr>
+	<a name="Connect"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Connect-1"></a>
+	<h2 class="unnumbered">Connect to Database</h2>
+	<p>GeoTool connects to either the main database, dbTables.sqlite3, or the database containing the current data only, dbTables_current.sqlite3. So click file connect and navigate to the project folder and open one of the databases mentioned above. When you open one of these databases, it will try to find the ensemble data and make that data available as well.</p>
+	<img src="Images/geotool_FileOpen.png" width="300" height="300" alt=""> 
+	
+	<hr>
+	<a name="Add"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Add-1"></a>
+	<h2 class="unnumbered">Create Layer</h2>
+	<p>Layers are an overlay of cells whose position are defined by a site and value that is based on the data requested. Layer name is the name assigned to the layer being made. Site Size sets the cells size in degree decimals. Table drop down allows you to select the table the data will pull from. Experimental and Scenario and Region are used to further narrow data to one value per site. If the project does not have experimentals or regions defined, then it hides those drop down boxes. Some tables have multiple layers per each site. For example SWAatSWPcrit tables have multiple layers. If one of these tables is selected, an extra drop down will show for selecting the layer. You can use a bounding box to only select sites in a defined area by clicking Use check box by Location Bounding Box and entering in correct numbers below that. Response Field(s) drop down box shows the columns in that table you can select values from. The reduce check box will allow you to select multiple related columns in one layer. Then on the map you can slide through these values. Reducing will find monthly column names, layer column names, and doy column names. When you reduce, the reduced columns will have a * in the name. You can use an * in the layer name and whatever doy, layer, or month selected will be displayed in the name.</p>
+	<p>Load Mask will load a .asc file. Loading this file will force data into predefined grid defined by that file if there is an overlap of data and grid. Multiple data points that map into the same spot will be averaged together to form one cell. The Powell Projects have a .asc file defined for each region. If you do not have a .asc file you can generate a mask by using the checkbox. It calculates the smallest distance between sites and then uses that for the cell width and height. Site Size will be used as a limit for size in this case. For example if the smallest distance between two sites is .2 and Site Size is .25, .25 will be used. Be careful not to generate more sites then your computer can handle. Masks for Powell Projects can be found <a href="asc/">here</a></p>
+	<p>If you have loaded a mask or generated a mask, you can use the Interpolate features. It will approximate the value of the value of the other sites by using the Inverse Distance Weighting Shepard's method. The weighting can be set to increase sharpness.</p>
+	<img src="Images/geoTool_newLayer.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_responseSelection.png" width="300" height="300" alt="">
+	
+	<hr>
+	<a name="View"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="View-1"></a>
+	<h2 class="unnumbered">Viewing Layers</h2>
+	<p>Once a Layer has been generated you will see it appear on the map. The map does not auto zoom or move when a layer is loaded so one might have to move around to find the loaded data. Mousing over a cell will display the value of it on the top right of the map. The name of the selected layer is on the top left. A color scale and values are displayed on the right middle of the screen. You can change the colors on the left of the scale. You can even have three different colors. On the left is where the highest, middle, lowest values are displayed for the layer. You can change those to adjust the scale manually.</p>
+	<p>If the select response variable was a reduced column then a bar on the bottom middle will appear. Use it to slide between the related columns. The checkbox use same scale will make the scale the same across all columns while sliding. Otherwise it will adjust the scale in the selected column.</p>
+	
+	<img src="Images/geoTool_LayerSelectedValue.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_reducedColumn.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_sameScaleM1.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_sameScaleM6.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_threeColor.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_scaleChange.png" width="300" height="300" alt="">
+	
+	<p>The images above show AET monthly mm mean values reduced. I show month 1 then 6 with no changes. Then I select same scale. This makes the first month seem all green because the values are so small compared with the other months. I then add blue as a middle color to month 6. I then change the scale manually in the last picture to make the max 100. This pushes more values into the red. You can see the selected cell by the black box around it and the value top left. Because of how the cord get mapped into pixels small overlap can happen usually by a pixel.</p>
+	
+	<hr>
+	<a name="Layers"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Layers-1"></a>
+	<h2 class="unnumbered">Selecting Layers</h2>
+	<p>Multiple layers can be added onto the map. They will all be visible unless set otherwise. To control this and the transparency go Edit -> Layers. A radio button will show you the selected layer. The selected layer will have the name and color scale. To change simple select the radio button of the desired layer and it will switch. The radio button Site/Mask will allow you to switch between the mask and the actual sites that made the values for the mask. Alpha will change the transparency of the layer. 0-full transparency, 255-No transparency. You can set the layer to hidden by unchecking the visible button. Finally to delete a layer press the delete button.</p>
+	<img src="Images/geoTool_lowAlpha.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_highAlpha.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_hiddenLayer.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_Sites.png" width="300" height="300" alt="">
+	
+	<hr>
+	<a name="ViewMenu"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="ViewMenu-1"></a>
+	<h2 class="unnumbered">View Menu</h2>
+	<p>On the menu bar the option view will allow/disable of some items. View -> Show Colors will hide or display the color scale drop down colors. The same applies to the values for the next option. The tile server can be switch to any of the listed under View -> Map Provider. Moving the map and zooming cause new tiles to load with the right map. Heavy use of any one server might cause a temporary ban from that server. Switching between servers can be done any time. View -> Histogram will pot the current data into a histogram. Enter the number of bins to have it plot it.</p>
+	<img src="Images/geoTool_openStreetMap.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_Histogram.png" width="300" height="300" alt="">
+	
+	
+	<hr>
+	<a name="Extraction"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Extraction-1"></a>
+	<h2 class="unnumbered">Data Extraction Tool</h2>
+	<p>The Menu Tools->Data Extraction allows one to generate csv tables. Before using the tool, select a database. Name the File at the top. This name will be used in the save dialog box. The extension ".csv" will be added so no need to put the file type. The data narrowing is like the add layers. The only difference is you can select multiple values from the header fields and also the response fields. Use shift or ctrl to select multiple columns from header and selected table. Then use the "Save CSV File" button to save the file. </p>
+	<img src="Images/geoTool_ToolsExtraction.png" width="300" height="300" alt="">
+	<img src="Images/geoTool_ExtractionExample.png" width="300" height="300" alt="">
+
+	<hr>
+	<a name="Source"></a>
+	<div class="header">
+	<p>
+	</div>
+	<a name="Source-1"></a>
+	<h2 class="unnumbered">Source Code</h2>
+	<p>GeoTool source code is available on github, <a href="https://github.com/ryanmurf/GeoTool">here</a>. You can import the project in eclipse. Then use eclipse to export a jar file for use.</p>
+	
+</body>
+</html>

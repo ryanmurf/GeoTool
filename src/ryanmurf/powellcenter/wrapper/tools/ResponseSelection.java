@@ -137,12 +137,14 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 				}
 			}
 			
+			double gridSize = ((Number) formattedTextFieldGridSize.getValue()).doubleValue();
+			
 			boolean genMask = chckbxGenerateMask.isSelected();
 			boolean Interpolate = chckbxShepardsMethod.isSelected();
 			int power = Integer.valueOf((String) comboBox_Power.getSelectedItem());
 			
 			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause, rdbtnScenarios.isSelected());
-			Layer l = new Layer(textField_LayerName.getText(), sites, map.getSelectedColors(), map, mask, genMask, Interpolate, power);
+			Layer l = new Layer(textField_LayerName.getText(), sites, map.getSelectedColors(), map, mask, genMask, Interpolate, power, gridSize);
 			map.addLayer(l);
 			
 			dispatchEvent(new WindowEvent(ResponseSelection.this, WindowEvent.WINDOW_CLOSING));
@@ -160,7 +162,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 	}
 	
 	public void setData() {
-		List<String> headerColumns = data.getTableColumnNames("header");
+		List<String> headerColumns = data.getTableColumnNames("header", true);
 		List<String> tables = data.getTables();
 		String[] sTables = tables.toArray(new String[tables.size()]);
 		comboBox_Table.setEnabled(true);
@@ -194,7 +196,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		rdbtnScenarios.addActionListener(this);
 		rdbtnEnsembles.addActionListener(this);
 		
-		if (data.contains(headerColumns, "Experimental_Label")) {
+		if (data.contains(headerColumns, "Experimental_Label", false)) {
 			List<String> experimentals = data.getExperimentalLabels();
 			String[] sExperimentals = experimentals.toArray(new String[experimentals.size()]);
 			comboBox_Experimental.setModel(new DefaultComboBoxModel<String>(sExperimentals));
@@ -205,7 +207,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		{
 			loadScenarioEorS();
 		}
-		if (data.contains(headerColumns, "Region")) {
+		if (data.contains(headerColumns, "Region", false)) {
 			List<Integer> regions = data.getRegions();
 			String[] sRegions = new String[regions.size()+1];
 			sRegions[0] = "All";
@@ -268,7 +270,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 			comboBox_Response.setModel(new DefaultComboBoxModel<String>(sColumnNames));
 			comboBox_Response.setSelectedIndex(1);
 		} else {
-			List<String> columnNames = data.getTableColumnNames((String) comboBox_Table.getSelectedItem());
+			List<String> columnNames = data.getTableColumnNames((String) comboBox_Table.getSelectedItem(), true);
 			String[] sColumnNames = columnNames.toArray(new String[columnNames.size()]);
 			comboBox_Response.setModel(new DefaultComboBoxModel<String>(sColumnNames));
 			comboBox_Response.setSelectedIndex(1);
@@ -298,7 +300,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 		
 		this.formattedTextFieldGridSize = new JFormattedTextField();
 		this.formattedTextFieldGridSize.setColumns(6);
-		this.formattedTextFieldGridSize.setText("0.3125");
+		this.formattedTextFieldGridSize.setValue(new Double(0.3125));
 		this.LayerNamePanel.add(this.formattedTextFieldGridSize);
 		
 		this.rdbtnEnsembles = new JRadioButton("Ensembles");

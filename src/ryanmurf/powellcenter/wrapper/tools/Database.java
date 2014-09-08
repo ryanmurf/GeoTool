@@ -1,5 +1,7 @@
 package ryanmurf.powellcenter.wrapper.tools;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
@@ -19,6 +21,8 @@ import java.util.List;
 import javax.swing.JOptionPane;
 
 import org.jdesktop.swingx.mapviewer.GeoPosition;
+
+import au.com.bytecode.opencsv.CSVWriter;
 
 public class Database {
 	private final static String[] headerTables = new String[] { "runs",
@@ -121,10 +125,12 @@ public class Database {
 		return false;
 	}
 	
-	boolean contains(List<String> list, String value) {
+	boolean contains(List<String> list, String value, boolean removeIfFound) {
 		value = value.toLowerCase();
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i).trim().toLowerCase().contains(value)) {
+				if(removeIfFound)
+					list.remove(i);
 				return true;
 			}
 		}
@@ -177,8 +183,8 @@ public class Database {
 	}
 	
 	public boolean getIsTableLayers(String table) {
-		List<String> columnNames = getTableColumnNames(table);
-		return contains(columnNames, "Soil_Layer");
+		List<String> columnNames = getTableColumnNames(table, true);
+		return contains(columnNames, "Soil_Layer", false);
 	}
 	
 	public int getMaxSoilLayer(String table) {
@@ -312,7 +318,7 @@ public class Database {
 		return tables;
 	}
 
-	List<String> getTableColumnNames(String table) {
+	List<String> getTableColumnNames(String table, boolean P_id) {
 		List<String> names = new ArrayList<String>();
 		try {
 			Statement statement = dbTables.createStatement();
@@ -326,11 +332,14 @@ public class Database {
 		} catch (SQLException e) {
 			System.out.println("Database : getTableColumnNames");
 		}
+		if(P_id == false) {
+			contains(names, "P_id", true);
+		}
 		return names;
 	}
 
 	List<String> getReducedNames(String table) {
-		List<String> names = getTableColumnNames(table);
+		List<String> names = getTableColumnNames(table, true);
 		for(int i=0; i<names.size(); i++) {
 			names.set(i, names.get(i).replaceAll("_m\\d++_", "_m*_"));
 			names.set(i, names.get(i).replaceAll("_L\\d++_", "_L*_"));
@@ -426,7 +435,7 @@ public class Database {
 			else
 				regex = response.split("\\*")[0] + "\\d++" + response.split("\\*")[1];
 			
-			for(String name : getTableColumnNames(Table)) {
+			for(String name : getTableColumnNames(Table, true)) {
 				if(name.matches(regex)) {
 					responseMatches.add(name);
 				}
@@ -442,18 +451,18 @@ public class Database {
 		} else {
 			response = dbtable+"."+response+" AS "+response;
 		}
-		List<String> headerColumns = getTableColumnNames("header");
+		List<String> headerColumns = getTableColumnNames("header", true);
 		
 		String headerColumn = "";
-		if(contains(headerColumns,"P_id"))
+		if(contains(headerColumns,"P_id", false))
 			headerColumn += "MAINDB.header.P_id AS P_id, ";
-		if(contains(headerColumns,"site_id"))
+		if(contains(headerColumns,"site_id", false))
 			headerColumn += "MAINDB.header.site_id AS site_id, ";
-		if(contains(headerColumns,"Region"))
+		if(contains(headerColumns,"Region", false))
 			headerColumn += "MAINDB.header.Region AS Region, ";
-		if(contains(headerColumns,"X_WGS84"))
+		if(contains(headerColumns,"X_WGS84", false))
 			headerColumn += "MAINDB.header.X_WGS84 AS X_WGS84, ";
-		if(contains(headerColumns,"Y_WGS84"))
+		if(contains(headerColumns,"Y_WGS84", false))
 			headerColumn += "MAINDB.header.Y_WGS84 AS Y_WGS84";
 		
 		String sqlExperimental = "";
@@ -463,10 +472,10 @@ public class Database {
 		String sql = "SELECT "+headerColumn+", "+response+" FROM "+dbtable+" INNER JOIN MAINDB.header ON "+dbtable+".P_id=MAINDB.header.P_id WHERE "+sqlExperimental+"MAINDB.header.Scenario='"+scenario+"'";
 		if(whereClause.length() != 0)
 			sql += " AND "+whereClause;
-		if(region.compareTo("All") != 0 && contains(headerColumns,"Region")) {
+		if(region.compareTo("All") != 0 && contains(headerColumns,"Region", false)) {
 			sql += " AND MAINDB.header.Region="+region;
 		}
-		if(contains(headerColumns,"Region"))
+		if(contains(headerColumns,"Region", false))
 			sql += " ORDER BY MAINDB.header.Region;";
 		
 		List<Site> sites = new ArrayList<Site>();
@@ -476,11 +485,11 @@ public class Database {
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
 				Site s = new Site(new GeoPosition(rs.getDouble("Y_WGS84"), rs.getDouble("X_WGS84")), .2125);
-				if(contains(headerColumns,"P_id"))
+				if(contains(headerColumns,"P_id", false))
 					s.P_id = rs.getInt("P_id");
-				if(contains(headerColumns,"site_id"))
+				if(contains(headerColumns,"site_id", false))
 					s.Site_id = rs.getInt("site_id");
-				if(contains(headerColumns,"Region"))
+				if(contains(headerColumns,"Region", false))
 					s.region = rs.getInt("Region");
 				if(responses > 1) {
 					for(String sp : responseMatches) {
@@ -499,5 +508,87 @@ public class Database {
 			JOptionPane.showMessageDialog(null, "Zero Sites Selected", "alert", JOptionPane.ERROR_MESSAGE);
 		//return Site.getMask(sites, true);
 		return sites;
+	}
+	
+	public void saveCSV(File file, String table, String region, String experimental, String scenario, List<String> headers, List<String> responses, String whereClause, boolean bScenario) {
+		if(region == null)
+			region = "";
+		
+		boolean current = true;
+		if (scenario.compareTo("Current") != 0) {
+			current = false;
+			if (!scenarioData || !ensembleData) {
+				// problem
+			}
+		}
+		String database = "";
+		String Table = "";
+		if (scenarioData && bScenario) {
+			database = "MAINDB";
+			Table = table;
+		} else {
+			if (ensembleData && !bScenario) {
+				if (current) {
+					database = "MAINDB";
+					Table = table;
+				} else {
+					database = table.toUpperCase();
+					Table = scenario+"_means";
+					scenario = "Current";
+				}
+			} else {
+				database = "MAINDB";
+				Table = table;
+			}
+		}
+		
+		String dbtable = database+"."+Table;
+		
+		String response = "";
+		for(String resp : responses) {
+			response += dbtable+"."+resp+" AS "+resp+",";
+		}
+		response = response.substring(0, response.length()-1);
+		
+		List<String> headerColumns = getTableColumnNames("header", true);
+		String header = "";
+		for(String headerColumn : headers) {
+			header += "MAINDB.header."+headerColumn+" AS "+headerColumn+",";
+		}
+		header = header.substring(0, header.length()-1);
+		
+		String sqlExperimental = "";
+		if(experimental != null) {
+			sqlExperimental = "MAINDB.header.Experimental_Label='"+experimental+"' AND ";
+		}
+		String sql = "SELECT "+header+", "+response+" FROM "+dbtable+" INNER JOIN MAINDB.header ON "+dbtable+".P_id=MAINDB.header.P_id WHERE "+sqlExperimental+"MAINDB.header.Scenario='"+scenario+"'";
+		if(whereClause.length() != 0)
+			sql += " AND "+whereClause;
+		if(region.compareTo("All") != 0 && contains(headerColumns,"Region", false)) {
+			sql += " AND MAINDB.header.Region="+region;
+		}
+		if(contains(headerColumns,"Region", false))
+			sql += " ORDER BY MAINDB.header.Region;";
+		
+		try {
+			Statement statement = dbTables.createStatement();
+			statement.setQueryTimeout(240);
+			ResultSet rs = statement.executeQuery(sql);
+			
+			CSVWriter writer = null;
+			try {
+				writer = new CSVWriter(new FileWriter(file.getPath()), '\t');
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			try {
+				writer.writeAll(rs, true);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (SQLException e) {
+			JOptionPane.showMessageDialog(null, "Could not get response\n"+sql+"\n"+e.toString(), "alert", JOptionPane.ERROR_MESSAGE);
+			System.out.println("Could not get response\n"+sql);
+		}		
 	}
 }
