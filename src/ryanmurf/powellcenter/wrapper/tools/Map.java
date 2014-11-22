@@ -337,6 +337,9 @@ public class Map extends JXMapKit implements ActionListener, ItemListener, Chang
 	
 	public void updateColorsAndNumbers() {
 		Layer selected = getSelectedLayer();
+		
+		selected.updateColors(null,getSelectedColors());
+		
 		Color[] colors = selected.paint.getColors();
 		jcomboBoxHighValue.setSelectedItem(colors[0]);
 		if(colors.length > 2) {

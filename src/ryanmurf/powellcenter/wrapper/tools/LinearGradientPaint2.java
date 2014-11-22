@@ -99,7 +99,7 @@ public class LinearGradientPaint2 implements Paint {
 	}
 	
 	public float getFraction(float value) {
-		float f = 1 - (value/(max-min));
+		float f = 1 - ((value-min)/(max-min));
 		if(Float.compare(f, 1.0f) > 0) {
 			return 1.0f;
 		} else if(Float.compare(f, 0.0f) < 0) {

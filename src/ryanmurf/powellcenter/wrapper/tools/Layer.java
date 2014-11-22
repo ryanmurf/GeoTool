@@ -274,9 +274,15 @@ public class Layer implements ActionListener {
 					double num = 0;
 					double den = 0;
 					for (Site s : sites) {
-						double w = 1 / Math.pow(ClosestPair.distance(n, s), (double) power);
-						num += w * s.respValues.get(k);
-						den += w;
+						if(Double.compare(n.getLatitude(), s.getLatitude()) == 0 && Double.compare(n.getLongitude(), s.getLongitude()) == 0) {
+							num = s.respValues.get(k);
+							den = 1;
+							break;
+						} else {
+							double w = 1 / Math.pow(ClosestPair.distance(n, s), (double) power);
+							num += w * s.respValues.get(k);
+							den += w;
+						}
 					}
 					n.respValues.add(num / den);
 				}

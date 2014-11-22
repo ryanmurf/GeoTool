@@ -67,6 +67,7 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 	private JMenuItem mntmHistogram;
 	private JMenu mnTools;
 	private JMenuItem mntmDataExtraction;
+	private JSeparator separator;
 	/**
 	 * Launch the application.
 	 */
@@ -129,12 +130,15 @@ public class GeoDataExplorer implements ActionListener, MenuListener {
 		
 		this.mntmLayers = new JMenuItem("Layers");
 		this.mntmLayers.addActionListener(this);
-		this.mnEdit.add(this.mntmLayers);
 		
 		this.mntmNewMap = new JMenuItem("New Layer");
 		this.mnEdit.add(this.mntmNewMap);
 		this.mntmNewMap.setEnabled(false);
 		this.mntmNewMap.addActionListener(this);
+		
+		this.separator = new JSeparator();
+		this.mnEdit.add(this.separator);
+		this.mnEdit.add(this.mntmLayers);
 		
 		this.mnTools = new JMenu("Tools");
 		this.menuBar.add(this.mnTools);

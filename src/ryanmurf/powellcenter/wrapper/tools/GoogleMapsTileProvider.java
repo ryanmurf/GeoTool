@@ -5,7 +5,7 @@ import org.jdesktop.swingx.mapviewer.TileFactory;
 import org.jdesktop.swingx.mapviewer.TileFactoryInfo;
 
 public class GoogleMapsTileProvider {
-	private static final String VERSION = "2.75";
+	//private static final String VERSION = "2.75";
 	private static final int minZoom = 1;
 	private static final int maxZoom = 16;
 	private static final int mapZoom = 17;

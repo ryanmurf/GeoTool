@@ -143,7 +143,7 @@ public class ResponseSelection extends JFrame implements ActionListener, ItemLis
 			boolean Interpolate = chckbxShepardsMethod.isSelected();
 			int power = Integer.valueOf((String) comboBox_Power.getSelectedItem());
 			
-			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause, rdbtnScenarios.isSelected());
+			List<Site> sites = data.getResponseValues(table, region, experimental, scenario, response, whereClause, rdbtnScenarios.isSelected(), gridSize);
 			Layer l = new Layer(textField_LayerName.getText(), sites, map.getSelectedColors(), map, mask, genMask, Interpolate, power, gridSize);
 			map.addLayer(l);
 			

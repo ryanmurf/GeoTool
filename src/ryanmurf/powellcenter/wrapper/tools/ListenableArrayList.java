@@ -16,6 +16,7 @@ implements Listenable<T> {
 			listener.afterAdd(item);
 		return true;
 	}
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean remove(Object o) {
 		if(listener != null)

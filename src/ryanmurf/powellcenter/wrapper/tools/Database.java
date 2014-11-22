@@ -81,23 +81,13 @@ public class Database {
 
 			Statement statement = dbTables.createStatement();
 			statement.setQueryTimeout(45);
-			statement.executeQuery("ATTACH DATABASE '" + MainDatabase.toString() + "' AS 'MAINDB';");
+			statement.executeUpdate("ATTACH DATABASE '" + MainDatabase.toString() + "' AS 'MAINDB';");
 		} catch (SQLException e) {
+			JOptionPane.showMessageDialog(null, "Could not connect to MainDatabase."+e.toString());
+			System.out.println("Could not connect to MainDatabase.\n"+e.toString());
 			//System.out.println("Database : Connect Problem MAINDB " + e.toString());
 		}
-		if (ensembleData) {
-			for (Path p : ensemblesPaths) {
-				String ensembleDBname = getEnsembleDatabaseName(p).toUpperCase();
-				try {
-					Statement statement = dbTables.createStatement();
-					statement.setQueryTimeout(45);
-					statement.executeQuery("ATTACH DATABASE '" + p.toString()
-						+ "' AS '" + ensembleDBname + "';");
-				} catch(SQLException e) {
-					//System.out.println("Database : Connect Problem Ensemble " + e.toString());
-				}
-			}
-		}
+		
 		//double check scenario data S
 		if(scenarioData) {
 			List<String> scenarios = getScenarioLabels();
@@ -105,6 +95,42 @@ public class Database {
 				scenarioData = false;
 		}
 		
+	}
+	
+	private void connectEnsemble(String EnsembleDB) {
+		if (ensembleData) {
+			for (Path p : ensemblesPaths) {
+				String ensembleDBname = getEnsembleDatabaseName(p).toUpperCase();
+				if (EnsembleDB.compareTo(ensembleDBname) == 0) {
+					try {
+						Statement statement = dbTables.createStatement();
+						statement.setQueryTimeout(45);
+						statement.executeUpdate("ATTACH DATABASE '" + p.toString() + "' AS '" + ensembleDBname + "';");
+					} catch (SQLException e) {
+						JOptionPane.showMessageDialog(null, "Database : Connect Problem Ensemble " + ensembleDBname);
+						System.out.println(e.toString());
+					}
+				}
+			}
+		}
+	}
+	
+	private void disconnectEnsemble(String EnsembleDB) {
+		if (ensembleData) {
+			for (Path p : ensemblesPaths) {
+				String ensembleDBname = getEnsembleDatabaseName(p).toUpperCase();
+				if (EnsembleDB.compareTo(ensembleDBname) == 0) {
+					try {
+						Statement statement = dbTables.createStatement();
+						statement.setQueryTimeout(45);
+						statement.executeUpdate("DETACH DATABASE "+ensembleDBname+";");
+					} catch (SQLException e) {
+						JOptionPane.showMessageDialog(null, "Database : DETACH Problem Ensemble " + ensembleDBname);
+						System.out.println(e.toString());
+					}
+				}
+			}
+		}
 	}
 
 	String getEnsembleDatabaseName(Path ensemble) {
@@ -354,6 +380,7 @@ public class Database {
 	List<String> getEnsembleTables(String ensembleDB) {
 		List<String> names = new ArrayList<String>();
 		if (ensembleData) {
+			connectEnsemble(ensembleDB);
 			try {
 				Statement statement = dbTables.createStatement();
 				statement.setQueryTimeout(45);
@@ -367,6 +394,7 @@ public class Database {
 			} catch (SQLException e) {
 				System.out.println("Database : Problem with getEnsembleTables "+ e.toString());
 			}
+			disconnectEnsemble(ensembleDB);
 		}
 		return names;
 	}
@@ -390,7 +418,7 @@ public class Database {
 	}
 
 	List<Site> getResponseValues(String table, String region,
-			String experimental, String scenario, String response, String whereClause, boolean bScenario) {
+			String experimental, String scenario, String response, String whereClause, boolean bScenario, double gridSize) {
 		
 		if(region == null)
 			region = "";
@@ -414,7 +442,15 @@ public class Database {
 					Table = table;
 				} else {
 					database = table.toUpperCase();
-					Table = scenario+"_means";
+					database = database.replace("DOY_", "");
+					database = database.replace("AGGREGATION_", "");
+					database = database.replace("_MEAN", "");
+					database = database.replace("_SD", "");
+					connectEnsemble(database);
+					if(table.toUpperCase().contains("_MEAN"))
+						Table = scenario+"_means";
+					else if(table.toUpperCase().contains("SD"))
+						Table = scenario+"_sds";
 					scenario = "Current";
 				}
 			} else {
@@ -484,7 +520,7 @@ public class Database {
 			statement.setQueryTimeout(240);
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
-				Site s = new Site(new GeoPosition(rs.getDouble("Y_WGS84"), rs.getDouble("X_WGS84")), .2125);
+				Site s = new Site(new GeoPosition(rs.getDouble("Y_WGS84"), rs.getDouble("X_WGS84")), gridSize);
 				if(contains(headerColumns,"P_id", false))
 					s.P_id = rs.getInt("P_id");
 				if(contains(headerColumns,"site_id", false))
@@ -507,6 +543,15 @@ public class Database {
 		if(sites.size() == 0)
 			JOptionPane.showMessageDialog(null, "Zero Sites Selected", "alert", JOptionPane.ERROR_MESSAGE);
 		//return Site.getMask(sites, true);
+		
+		if (!(scenarioData && bScenario)) {
+			if (ensembleData && !bScenario) {
+				if (!current) {
+					disconnectEnsemble(database);
+				}
+			}
+		}
+		
 		return sites;
 	}
 	
@@ -533,7 +578,15 @@ public class Database {
 					Table = table;
 				} else {
 					database = table.toUpperCase();
-					Table = scenario+"_means";
+					database = database.replace("DOY_", "");
+					database = database.replace("AGGREGATION_", "");
+					database = database.replace("_MEAN", "");
+					database = database.replace("_SD", "");
+					connectEnsemble(database);
+					if(table.toUpperCase().contains("_MEAN"))
+						Table = scenario+"_means";
+					else if(table.toUpperCase().contains("_SD"))
+						Table = scenario+"_sds";
 					scenario = "Current";
 				}
 			} else {
@@ -589,6 +642,14 @@ public class Database {
 		} catch (SQLException e) {
 			JOptionPane.showMessageDialog(null, "Could not get response\n"+sql+"\n"+e.toString(), "alert", JOptionPane.ERROR_MESSAGE);
 			System.out.println("Could not get response\n"+sql);
-		}		
+		}
+		
+		if (!(scenarioData && bScenario)) {
+			if (ensembleData && !bScenario) {
+				if (!current) {
+					disconnectEnsemble(database);
+				}
+			}
+		}
 	}
 }
