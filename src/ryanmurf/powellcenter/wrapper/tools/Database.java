@@ -22,7 +22,7 @@ import javax.swing.JOptionPane;
 
 import org.jdesktop.swingx.mapviewer.GeoPosition;
 
-import au.com.bytecode.opencsv.CSVWriter;
+import com.opencsv.CSVWriter;
 
 public class Database {
 	private final static String[] headerTables = new String[] { "runs",
@@ -517,7 +517,7 @@ public class Database {
 		List<Site> sites = new ArrayList<Site>();
 		try {
 			Statement statement = dbTables.createStatement();
-			statement.setQueryTimeout(240);
+			statement.setQueryTimeout(550);
 			ResultSet rs = statement.executeQuery(sql);
 			while (rs.next()) {
 				Site s = new Site(new GeoPosition(rs.getDouble("Y_WGS84"), rs.getDouble("X_WGS84")), gridSize);
@@ -625,17 +625,19 @@ public class Database {
 		
 		try {
 			Statement statement = dbTables.createStatement();
-			statement.setQueryTimeout(240);
+			statement.setQueryTimeout(550);
 			ResultSet rs = statement.executeQuery(sql);
+			
 			
 			CSVWriter writer = null;
 			try {
-				writer = new CSVWriter(new FileWriter(file.getPath()), '\t');
+				writer = new CSVWriter(new FileWriter(file.getPath()), '\t', CSVWriter.NO_QUOTE_CHARACTER);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			try {
 				writer.writeAll(rs, true);
+				writer.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

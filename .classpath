@@ -19,7 +19,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="jcommon-1.0.23.jar"/>
-	<classpathentry kind="lib" path="opencsv-2.3.jar"/>
+	<classpathentry kind="lib" path="opencsv-3.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JsoilWat"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/SoilWatExplorer"/>
 	<classpathentry kind="output" path="bin"/>
