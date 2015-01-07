@@ -555,7 +555,7 @@ public class Database {
 		return sites;
 	}
 	
-	public void saveCSV(File file, String table, String region, String experimental, String scenario, List<String> headers, List<String> responses, String whereClause, boolean bScenario) {
+	public void saveCSV(File file, String table, String region, String experimental, String scenario, List<String> headers, List<String> responses, String whereClause, boolean bScenario, int decimals) {
 		if(region == null)
 			region = "";
 		
@@ -612,7 +612,8 @@ public class Database {
 		
 		String sqlExperimental = "";
 		if(experimental != null) {
-			sqlExperimental = "MAINDB.header.Experimental_Label='"+experimental+"' AND ";
+			if(!experimental.contains("All"))
+				sqlExperimental = "MAINDB.header.Experimental_Label='"+experimental+"' AND ";
 		}
 		String sql = "SELECT "+header+", "+response+" FROM "+dbtable+" INNER JOIN MAINDB.header ON "+dbtable+".P_id=MAINDB.header.P_id WHERE "+sqlExperimental+"MAINDB.header.Scenario='"+scenario+"'";
 		if(whereClause.length() != 0)
@@ -636,6 +637,8 @@ public class Database {
 				e.printStackTrace();
 			}
 			try {
+				boolean format = decimals==0?false:true;
+				writer.setResultService(new MyResultSetService(format, decimals));
 				writer.writeAll(rs, true);
 				writer.close();
 			} catch (IOException e) {
